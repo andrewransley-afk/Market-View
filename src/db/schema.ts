@@ -5,8 +5,8 @@ let client: Client;
 export function getClient(): Client {
   if (client) return client;
 
-  const url = process.env.TURSO_URL;
-  const authToken = process.env.TURSO_AUTH_TOKEN;
+  const url = process.env.TURSO_URL?.trim();
+  const authToken = process.env.TURSO_AUTH_TOKEN?.trim();
 
   if (url) {
     // Remote Turso database
