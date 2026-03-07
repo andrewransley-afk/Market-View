@@ -1,5 +1,8 @@
 FROM node:20-slim
 
+# Install build tools needed by @libsql/client native modules
+RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # Copy package files and install
@@ -10,7 +13,7 @@ RUN npm install --production=false
 COPY src/ ./src/
 COPY tsconfig.json ./
 
-# Create data directory for SQLite
+# Create data directory
 RUN mkdir -p data
 
 ENV DASHBOARD_ONLY=true
