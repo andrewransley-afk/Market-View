@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import { getDatabase } from "./db/schema";
+import { initDatabase } from "./db/schema";
 import { startServer } from "./dashboard/server";
 import { startScheduler, runDailyJob } from "./scheduler/daily-job";
 
@@ -12,8 +12,8 @@ async function main(): Promise<void> {
 
   // 1. Initialize database
   console.log("[Init] Initializing database...");
-  getDatabase();
-  console.log(`[Init] Database ready at ${process.env.DATABASE_PATH || "./data/market-view.db"}`);
+  await initDatabase();
+  console.log("[Init] Database ready");
 
   // 2. Start dashboard server
   startServer();

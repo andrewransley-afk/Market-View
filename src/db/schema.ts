@@ -1,24 +1,35 @@
-import Database from "better-sqlite3";
-import path from "path";
+import { createClient, Client } from "@libsql/client";
 
-let db: Database.Database;
+let client: Client;
 
-export function getDatabase(): Database.Database {
-  if (db) return db;
+export function getClient(): Client {
+  if (client) return client;
 
-  const dbPath = process.env.DATABASE_PATH || "./data/market-view.db";
-  const dir = path.dirname(dbPath);
+  const url = process.env.TURSO_URL;
+  const authToken = process.env.TURSO_AUTH_TOKEN;
 
-  // Ensure directory exists
-  const fs = require("fs");
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+  if (url) {
+    // Remote Turso database
+    client = createClient({ url, authToken });
+  } else {
+    // Local SQLite file fallback
+    const dbPath = process.env.DATABASE_PATH || "./data/market-view.db";
+    const fs = require("fs");
+    const path = require("path");
+    const dir = path.dirname(dbPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    client = createClient({ url: `file:${dbPath}` });
   }
 
-  db = new Database(dbPath);
-  db.pragma("journal_mode = WAL");
+  return client;
+}
 
-  db.exec(`
+export async function initDatabase(): Promise<void> {
+  const db = getClient();
+
+  await db.executeMultiple(`
     CREATE TABLE IF NOT EXISTS competitor_availability (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       competitor TEXT NOT NULL,
@@ -52,12 +63,4 @@ export function getDatabase(): Database.Database {
     CREATE INDEX IF NOT EXISTS idx_allocation_date ON hx_allocation(date);
     CREATE INDEX IF NOT EXISTS idx_stock_history_lookup ON stock_history(date, source, recorded_date);
   `);
-
-  // Add tickets column if missing (migration for existing DBs)
-  const cols = db.prepare("PRAGMA table_info(competitor_availability)").all() as { name: string }[];
-  if (!cols.some(c => c.name === "tickets")) {
-    db.exec("ALTER TABLE competitor_availability ADD COLUMN tickets INTEGER");
-  }
-
-  return db;
 }

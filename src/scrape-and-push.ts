@@ -3,13 +3,9 @@
  * Usage: npx tsx src/scrape-and-push.ts
  */
 import "dotenv/config";
+import { initDatabase, getClient } from "./db/schema";
 import { runAllScrapers } from "./scrapers/run-all";
 import { fetchHXAllocation } from "./api/hx-rate-checker";
-import {
-  upsertCompetitorAvailability,
-  recordStockSnapshot,
-  upsertHXAllocation,
-} from "./db/queries";
 
 const REMOTE_URL = process.env.REMOTE_URL;
 const API_KEY = process.env.API_KEY;
@@ -17,10 +13,12 @@ const API_KEY = process.env.API_KEY;
 interface ImportPayload {
   competitors: { competitor: string; date: string; available: boolean; tickets?: number }[];
   hxAllocations: { date: string; timeSlot: string; ticketsAvailable: number }[];
-  stockSnapshots: { date: string; source: string; tickets: number }[];
+  stockSnapshots: { date: string; source: string; tickets: number; recordedDate: string }[];
 }
 
 async function main() {
+  await initDatabase();
+
   console.log("[Push] Starting local scrape...");
 
   // 1. Run scrapers
@@ -33,40 +31,37 @@ async function main() {
   console.log(`[Push] HX: ${allocations.length} allocation records`);
 
   // 3. Build payload from local DB
-  const { getDatabase } = await import("./db/schema");
-  const db = getDatabase();
+  const db = getClient();
 
-  const competitors = db
-    .prepare(
-      `SELECT competitor, date, available, tickets FROM competitor_availability`
-    )
-    .all() as { competitor: string; date: string; available: number; tickets: number | null }[];
+  const competitors = (await db.execute(
+    `SELECT competitor, date, available, tickets FROM competitor_availability`
+  )).rows;
 
-  const hxRows = db
-    .prepare(`SELECT date, time_slot, tickets_available FROM hx_allocation`)
-    .all() as { date: string; time_slot: string; tickets_available: number }[];
+  const hxRows = (await db.execute(
+    `SELECT date, time_slot, tickets_available FROM hx_allocation`
+  )).rows;
 
-  const stockRows = db
-    .prepare(`SELECT date, source, tickets, recorded_date FROM stock_history`)
-    .all() as { date: string; source: string; tickets: number; recorded_date: string }[];
+  const stockRows = (await db.execute(
+    `SELECT date, source, tickets, recorded_date FROM stock_history`
+  )).rows;
 
   const payload: ImportPayload = {
     competitors: competitors.map((r) => ({
-      competitor: r.competitor,
-      date: r.date,
+      competitor: r.competitor as string,
+      date: r.date as string,
       available: r.available === 1,
-      tickets: r.tickets ?? undefined,
+      tickets: r.tickets != null ? (r.tickets as number) : undefined,
     })),
     hxAllocations: hxRows.map((r) => ({
-      date: r.date,
-      timeSlot: r.time_slot,
-      ticketsAvailable: r.tickets_available,
+      date: r.date as string,
+      timeSlot: r.time_slot as string,
+      ticketsAvailable: r.tickets_available as number,
     })),
     stockSnapshots: stockRows.map((r) => ({
-      date: r.date,
-      source: r.source,
-      tickets: r.tickets,
-      recordedDate: r.recorded_date,
+      date: r.date as string,
+      source: r.source as string,
+      tickets: r.tickets as number,
+      recordedDate: r.recorded_date as string,
     })),
   };
 
@@ -85,7 +80,6 @@ async function main() {
 
   console.log(`[Push] Pushing to ${REMOTE_URL}...`);
 
-  // Send in chunks to avoid payload size limits
   const CHUNK = 500;
   let totalImported = 0;
 

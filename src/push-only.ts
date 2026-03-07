@@ -3,7 +3,7 @@
  * Usage: npx tsx src/push-only.ts
  */
 import "dotenv/config";
-import { getDatabase } from "./db/schema";
+import { getClient, initDatabase } from "./db/schema";
 
 const REMOTE_URL = process.env.REMOTE_URL;
 const API_KEY = process.env.API_KEY;
@@ -14,19 +14,20 @@ async function main() {
     return;
   }
 
-  const db = getDatabase();
+  await initDatabase();
+  const db = getClient();
 
-  const competitors = db
-    .prepare(`SELECT competitor, date, available, tickets FROM competitor_availability`)
-    .all() as { competitor: string; date: string; available: number; tickets: number | null }[];
+  const competitors = (await db.execute(
+    `SELECT competitor, date, available, tickets FROM competitor_availability`
+  )).rows;
 
-  const hxRows = db
-    .prepare(`SELECT date, time_slot, tickets_available FROM hx_allocation`)
-    .all() as { date: string; time_slot: string; tickets_available: number }[];
+  const hxRows = (await db.execute(
+    `SELECT date, time_slot, tickets_available FROM hx_allocation`
+  )).rows;
 
-  const stockRows = db
-    .prepare(`SELECT date, source, tickets, recorded_date FROM stock_history`)
-    .all() as { date: string; source: string; tickets: number; recorded_date: string }[];
+  const stockRows = (await db.execute(
+    `SELECT date, source, tickets, recorded_date FROM stock_history`
+  )).rows;
 
   console.log(`[Push] ${competitors.length} competitor + ${hxRows.length} HX + ${stockRows.length} stock records`);
 

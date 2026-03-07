@@ -188,7 +188,7 @@ export async function fetchHXAllocation(
     // Store in database
     const hxDailyTickets = new Map<string, number>();
     for (const alloc of allocations) {
-      upsertHXAllocation(alloc.date, alloc.timeSlot, alloc.ticketsAvailable);
+      await upsertHXAllocation(alloc.date, alloc.timeSlot, alloc.ticketsAvailable);
       hxDailyTickets.set(
         alloc.date,
         (hxDailyTickets.get(alloc.date) || 0) + alloc.ticketsAvailable
@@ -196,7 +196,7 @@ export async function fetchHXAllocation(
     }
 
     for (const [date, tickets] of hxDailyTickets) {
-      recordStockSnapshot(date, "hx", tickets);
+      await recordStockSnapshot(date, "hx", tickets);
     }
 
     console.log(`[HX] ${allocations.length} allocation records stored`);

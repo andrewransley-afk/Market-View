@@ -75,9 +75,9 @@ export function createServer(): express.Express {
     res.json({ running: scrapeRunning });
   });
 
-  app.get("/api/overview", (_req, res) => {
+  app.get("/api/overview", async (_req, res) => {
     try {
-      const overview = generateRecommendations(90);
+      const overview = await generateRecommendations(90);
       res.json(overview);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -86,9 +86,9 @@ export function createServer(): express.Express {
     }
   });
 
-  app.get("/api/date-history/:date", (req, res) => {
+  app.get("/api/date-history/:date", async (req, res) => {
     try {
-      const history = getDateHistory(req.params.date);
+      const history = await getDateHistory(req.params.date);
       res.json(history);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -113,14 +113,14 @@ export function createServer(): express.Express {
       return;
     }
     saveHXCookies(cfAppSession.trim(), name || "Unknown");
-    hxSessionValid = true; // Assume valid until next scrape proves otherwise
+    hxSessionValid = true;
     console.log(`[HX] Cookies saved by ${name || "Unknown"}`);
     res.json({ status: "saved" });
   });
 
-  app.get("/api/last-updated", (_req, res) => {
+  app.get("/api/last-updated", async (_req, res) => {
     try {
-      const lastUpdated = getLatestScrapeTime();
+      const lastUpdated = await getLatestScrapeTime();
       res.json({ lastUpdated });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -129,7 +129,7 @@ export function createServer(): express.Express {
   });
 
   // Import endpoint: receive scrape data from local machine
-  app.post("/api/import", (req, res) => {
+  app.post("/api/import", async (req, res) => {
     const apiKey = process.env.API_KEY;
     if (apiKey && req.headers["x-api-key"] !== apiKey) {
       res.status(401).json({ error: "Invalid API key" });
@@ -141,21 +141,21 @@ export function createServer(): express.Express {
 
     if (Array.isArray(competitors)) {
       for (const r of competitors) {
-        upsertCompetitorAvailability(r.competitor, r.date, r.available, r.tickets);
+        await upsertCompetitorAvailability(r.competitor, r.date, r.available, r.tickets);
         imported++;
       }
     }
 
     if (Array.isArray(hxAllocations)) {
       for (const a of hxAllocations) {
-        upsertHXAllocation(a.date, a.timeSlot, a.ticketsAvailable);
+        await upsertHXAllocation(a.date, a.timeSlot, a.ticketsAvailable);
         imported++;
       }
     }
 
     if (Array.isArray(stockSnapshots)) {
       for (const s of stockSnapshots) {
-        importStockSnapshot(s.date, s.source, s.tickets, s.recordedDate);
+        await importStockSnapshot(s.date, s.source, s.tickets, s.recordedDate);
         imported++;
       }
     }

@@ -38,7 +38,7 @@ export async function runAllScrapers(
       const wbDailyTickets = new Map<string, number>();
 
       for (const result of results) {
-        upsertCompetitorAvailability(
+        await upsertCompetitorAvailability(
           scraper.name,
           result.date,
           result.available,
@@ -55,7 +55,7 @@ export async function runAllScrapers(
       }
 
       for (const [date, tickets] of wbDailyTickets) {
-        recordStockSnapshot(date, "wb", tickets);
+        await recordStockSnapshot(date, "wb", tickets);
       }
 
       // Record competitor availability snapshots (1=available, 0=sold out)
@@ -68,7 +68,7 @@ export async function runAllScrapers(
         }[scraper.name];
         if (shortName) {
           for (const result of results) {
-            recordStockSnapshot(result.date, shortName, result.available ? 1 : 0);
+            await recordStockSnapshot(result.date, shortName, result.available ? 1 : 0);
           }
         }
       }

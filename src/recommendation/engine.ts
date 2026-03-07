@@ -6,7 +6,7 @@ import {
 } from "../db/queries";
 import { formatDate } from "../scrapers/scraper-interface";
 
-export function generateRecommendations(days: number = 90): DayOverview[] {
+export async function generateRecommendations(days: number = 90): Promise<DayOverview[]> {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() + 4);
   const endDate = new Date();
@@ -15,9 +15,9 @@ export function generateRecommendations(days: number = 90): DayOverview[] {
   const startStr = formatDate(startDate);
   const endStr = formatDate(endDate);
 
-  const competitorData = getCompetitorAvailability(startStr, endStr);
-  const allocationData = getHXAllocations(startStr, endStr);
-  const trends = getStockTrends(startStr, endStr);
+  const competitorData = await getCompetitorAvailability(startStr, endStr);
+  const allocationData = await getHXAllocations(startStr, endStr);
+  const trends = await getStockTrends(startStr, endStr);
 
   // Group by date
   const competitorsByDate = new Map<string, CompetitorAvailability[]>();
@@ -49,7 +49,6 @@ export function generateRecommendations(days: number = 90): DayOverview[] {
       (sum, a) => sum + a.ticketsAvailable,
       0
     );
-    // Get WB Direct tickets and non-WB competitor sold-out count
     const wbDirect = competitors.find(
       (c) => c.competitor === "WB Studio Tour Direct"
     );
@@ -79,7 +78,6 @@ export function generateRecommendations(days: number = 90): DayOverview[] {
     });
   }
 
-  // Sort by date
   overviews.sort((a, b) => a.date.localeCompare(b.date));
 
   return overviews;
@@ -92,13 +90,8 @@ export function calculateRecommendation(
   const wbSoldOut = wbTickets !== null && wbTickets === 0;
   const wbLow = wbTickets !== null && wbTickets > 0 && wbTickets < 30;
 
-  // 1) WB close to selling out (< 30 tickets), regardless of others
   if (wbLow) return "wb-low";
-
-  // 2) WB sold out or low AND 2+ other partners sold out = yield opportunity
   if ((wbSoldOut || wbLow) && otherSoldOutCount >= 2) return "yield";
-
-  // 3) WB sold out and no other partners sold out
   if (wbSoldOut && otherSoldOutCount === 0) return "wb-sold-out";
 
   return "hold";
