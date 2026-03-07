@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Market View - Pricing Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Lora:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    @font-face {
+      font-family: "Harry Beast";
+      src: url("/harry-beast.woff2") format("woff2");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+  </style>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --navy-dark: #001a30;
+      --navy: #002a4e;
+      --navy-mid: #083861;
+      --blue: #005789;
+      --blue-light: #8cd0e5;
+      --gold: #f6bd49;
+      --gold-dark: #dfaa3e;
+      --teal: #66bbb0;
+      --grey-light: #f2f2f2;
+      --text-light: #c8dce8;
+      --text-muted: #7a9bb5;
+    }
+
+    body {
+      font-family: "Lora", Georgia, serif;
+      background: var(--navy-dark);
+      color: var(--text-light);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Hero banner with dark cinematic overlay */
+    .hero-banner {
+      background:
+        linear-gradient(180deg, rgba(0,26,48,0.3) 0%, rgba(0,26,48,0.95) 100%),
+        url('https://www.wbstudiotour.co.uk/wp-content/uploads/2019/06/Hogwarts-Castle-Model.jpg') center/cover no-repeat;
+      padding: 50px 20px 40px;
+      text-align: center;
+      position: relative;
+    }
+
+    /* Flourish SVG dividers - inspired by the WB site's decorative elements */
+    .flourish {
+      display: block;
+      margin: 0 auto;
+      opacity: 0.5;
+    }
+
+    h1 {
+      font-family: "Harry Beast", "Cinzel Decorative", serif;
+      font-size: 56px;
+      font-weight: 400;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #fff;
+      text-shadow: 0 2px 30px rgba(0,0,0,0.5);
+      margin-bottom: 2px;
+      line-height: 1.1;
+    }
+
+    .subtitle {
+      font-family: "Harry Beast", "Cinzel Decorative", serif;
+      font-size: 15px;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      color: var(--blue-light);
+      font-weight: 400;
+    }
+
+    .last-updated {
+      color: var(--text-muted);
+      font-size: 13px;
+      font-style: italic;
+      margin-top: 16px;
+    }
+
+    .scrape-btn {
+      display: inline-block;
+      margin-top: 18px;
+      padding: 12px 32px;
+      font-family: "Lora", serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #000;
+      background: var(--gold);
+      border: none;
+      border-radius: 0;
+      cursor: pointer;
+      transition: background 0.2s;
+      position: relative;
+    }
+    .scrape-btn:hover { background: var(--gold-dark); }
+    .scrape-btn:active { transform: translateY(1px); }
+    .scrape-btn:disabled {
+      background: var(--text-muted);
+      color: var(--navy);
+      cursor: not-allowed;
+    }
+    /* Ticket-stub notches on button */
+    .scrape-btn::before, .scrape-btn::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 10px;
+      height: 10px;
+      background: var(--navy-dark);
+      border-radius: 50%;
+    }
+    .scrape-btn::before { left: -5px; }
+    .scrape-btn::after { right: -5px; }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px 40px;
+    }
+
+    /* Alert banner */
+    .alert-banner {
+      background: var(--navy-mid);
+      border-left: 4px solid var(--gold);
+      padding: 16px 24px;
+      margin: 24px 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--gold);
+      letter-spacing: 0.5px;
+    }
+    .alert-banner.urgent {
+      border-color: #cf2e2e;
+      color: #ff7b6b;
+      background: linear-gradient(90deg, rgba(207,46,46,0.12), var(--navy-mid));
+    }
+    .alert-banner.clear {
+      border-color: var(--teal);
+      color: var(--teal);
+    }
+
+    /* Stats row */
+    .stats-row {
+      display: flex;
+      gap: 1px;
+      margin-bottom: 24px;
+      background: rgba(0,0,0,0.2);
+    }
+    .stat-card {
+      flex: 1;
+      background: var(--navy);
+      padding: 20px 16px;
+      text-align: center;
+      transition: background 0.2s;
+    }
+    .stat-card:hover { background: var(--navy-mid); }
+    .stat-value {
+      font-family: "Harry Beast", "Cinzel Decorative", serif;
+      font-size: 32px;
+      font-weight: 400;
+      color: var(--gold);
+    }
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-top: 6px;
+    }
+
+    /* Heading flourish (mimics WB site section headings) */
+    .section-heading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin: 28px 0 16px;
+    }
+    .section-heading span {
+      font-family: "Harry Beast", "Cinzel Decorative", serif;
+      font-size: 16px;
+      font-weight: 400;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--blue-light);
+      white-space: nowrap;
+    }
+    .section-heading::before, .section-heading::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--blue), transparent);
+    }
+
+    /* Table */
+    .table-wrapper {
+      background: var(--navy);
+      overflow: hidden;
+      box-shadow: 0 4px 30px rgba(0,0,0,0.4);
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    th {
+      background: var(--navy-mid);
+      color: var(--blue-light);
+      padding: 14px 16px;
+      text-align: left;
+      font-family: "Lora", serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      border-bottom: 2px solid rgba(0,87,137,0.4);
+    }
+
+    td {
+      padding: 11px 16px;
+      border-bottom: 1px solid rgba(0,87,137,0.15);
+      font-size: 14px;
+      color: var(--text-light);
+    }
+
+    tr { transition: background 0.2s; }
+    tr:hover { background: rgba(0,87,137,0.1); }
+
+    /* Raise row - gold left accent */
+    tr.raise-row {
+      background: linear-gradient(90deg, rgba(246,189,73,0.08), transparent);
+    }
+    tr.raise-row:hover {
+      background: linear-gradient(90deg, rgba(246,189,73,0.15), rgba(0,87,137,0.08));
+    }
+    tr.raise-row td:first-child {
+      box-shadow: inset 3px 0 0 var(--gold);
+    }
+
+    .date-cell {
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+    }
+
+    /* Availability indicators */
+    .dot {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      vertical-align: middle;
+    }
+    .dot.green {
+      background: var(--teal);
+      box-shadow: 0 0 8px rgba(102,187,176,0.4);
+    }
+    .dot.red {
+      background: #cf2e2e;
+      box-shadow: 0 0 8px rgba(207,46,46,0.4);
+    }
+    .dot.grey {
+      background: #2a3a4a;
+    }
+
+    /* Urgent summary panel */
+    .urgent-panel {
+      background: linear-gradient(135deg, rgba(246,189,73,0.08), rgba(246,189,73,0.02));
+      border: 1px solid rgba(246,189,73,0.3);
+      border-left: 4px solid var(--gold);
+      padding: 18px 24px;
+      margin-bottom: 24px;
+    }
+    .urgent-panel h3 {
+      font-family: "Harry Beast", "Cinzel Decorative", serif;
+      font-size: 16px;
+      font-weight: 400;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin: 0 0 12px 0;
+    }
+    .urgent-dates {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .urgent-date {
+      background: var(--navy-mid);
+      border: 1px solid rgba(246,189,73,0.25);
+      padding: 8px 14px;
+      font-size: 13px;
+      color: #fff;
+      font-weight: 600;
+    }
+    .urgent-date .stock-info {
+      display: block;
+      font-size: 11px;
+      color: var(--gold);
+      font-weight: 400;
+      margin-top: 2px;
+    }
+
+    /* Recommendation badges */
+    .rec-badge {
+      display: inline-block;
+      font-family: "Lora", serif;
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      white-space: nowrap;
+    }
+    .rec-wb-low {
+      background: #ff6900;
+      color: #000;
+    }
+    .rec-yield {
+      background: var(--gold);
+      color: #000;
+    }
+    .rec-wb-sold-out {
+      background: #cf2e2e;
+      color: #fff;
+    }
+    .rec-hold {
+      color: var(--text-muted);
+      font-size: 12px;
+      font-style: italic;
+    }
+
+    /* Stock number styling */
+    .stock-high { color: var(--teal); font-weight: 700; }
+    .stock-med { color: var(--gold); font-weight: 700; }
+    .stock-low { color: #cf2e2e; font-weight: 700; }
+    .stock-zero { color: #2a3a4a; }
+
+    /* Trend indicators */
+    .trend {
+      font-size: 11px;
+      margin-left: 4px;
+      font-weight: 400;
+    }
+    .trend-down { color: #cf2e2e; }
+    .trend-up { color: var(--teal); }
+    .trend-flat { color: var(--text-muted); }
+
+    /* Clickable rows */
+    tr[data-date] { cursor: pointer; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,10,20,0.85);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: fade-in 0.2s;
+    }
+    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+    .modal {
+      background: var(--navy);
+      border: 1px solid rgba(0,87,137,0.4);
+      width: 90%;
+      max-width: 800px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 60px rgba(0,0,0,0.6);
+      position: relative;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 24px;
+      border-bottom: 1px solid rgba(0,87,137,0.3);
+    }
+    .modal-header h2 {
+      font-family: "Harry Beast", "Cinzel Decorative", serif;
+      font-size: 22px;
+      font-weight: 400;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #fff;
+      margin: 0;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 28px;
+      cursor: pointer;
+      padding: 0 4px;
+      line-height: 1;
+    }
+    .modal-close:hover { color: #fff; }
+
+    .modal-body { padding: 24px; }
+
+    .chart-container {
+      background: var(--navy-dark);
+      border: 1px solid rgba(0,87,137,0.2);
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    .chart-container canvas {
+      width: 100%;
+      height: 250px;
+    }
+    .chart-legend {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 12px;
+      font-size: 12px;
+    }
+    .chart-legend span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .legend-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .events-title {
+      font-family: "Harry Beast", "Cinzel Decorative", serif;
+      font-size: 14px;
+      font-weight: 400;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--blue-light);
+      margin-bottom: 12px;
+    }
+    .event-list { list-style: none; }
+    .event-list li {
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(0,87,137,0.1);
+      font-size: 13px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .event-date-label {
+      color: var(--text-muted);
+      min-width: 80px;
+      font-size: 11px;
+    }
+    .event-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .event-badge.sold-out { background: #cf2e2e; color: #fff; }
+    .event-badge.back { background: var(--teal); color: #000; }
+    .no-history {
+      text-align: center;
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 40px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 100px 40px;
+      font-family: "Cinzel Decorative", serif;
+      font-size: 18px;
+      color: var(--text-muted);
+      letter-spacing: 4px;
+    }
+
+    .error {
+      text-align: center;
+      padding: 80px 40px;
+      color: #cf2e2e;
+      font-family: "Lora", serif;
+      font-size: 16px;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      padding: 20px;
+      color: #2a4a60;
+      font-size: 12px;
+      font-style: italic;
+      letter-spacing: 2px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      h1 { font-size: 28px; letter-spacing: 2px; }
+      .stats-row { flex-wrap: wrap; }
+      .stat-card { flex: 1 1 45%; }
+      .stat-value { font-size: 24px; }
+      td, th { padding: 8px 10px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="hero-banner">
+      <div class="loading">Summoning Market Data...</div>
+    </div>
+  </div>
+
+  <script>
+    const COMPETITORS = [
+      "WB Studio Tour Direct",
+      "Golden Tours",
+      "Booking.com",
+      "Premium Tours",
+      "GetYourGuide"
+    ];
+
+    const SHORT_NAMES = {
+      "WB Studio Tour Direct": "WB Direct",
+      "Golden Tours": "Golden",
+      "Booking.com": "Booking",
+      "Premium Tours": "Premium",
+      "GetYourGuide": "GYG"
+    };
+
+    function formatDate(dateStr) {
+      const d = new Date(dateStr + "T00:00:00");
+      return d.toLocaleDateString("en-GB", {
+        weekday: "short",
+        day: "numeric",
+        month: "short"
+      });
+    }
+
+    function stockClass(stock) {
+      if (stock === 0) return "stock-zero";
+      if (stock <= 10) return "stock-low";
+      if (stock <= 30) return "stock-med";
+      return "stock-high";
+    }
+
+    function trendHTML(now, prev) {
+      if (now === null || now === undefined || prev === null || prev === undefined) return "";
+      const diff = now - prev;
+      if (diff === 0) return "";
+      const cls = diff < 0 ? "trend-down" : "trend-up";
+      const arrow = diff < 0 ? "\u2193" : "\u2191";
+      return `<span class="trend ${cls}">${arrow}${Math.abs(diff)}</span>`;
+    }
+
+    function render(data, lastUpdated) {
+      const app = document.getElementById("app");
+      const raiseCount = data.filter(d => d.recommendation !== "hold").length;
+      const totalStock = data.reduce((sum, d) => sum + d.totalStock, 0);
+      let bannerClass = "clear";
+      let bannerText = "All clear \u2014 no pricing action needed today.";
+      if (raiseCount > 0) {
+        bannerClass = raiseCount >= 5 ? "urgent" : "";
+        bannerText = `${raiseCount} date${raiseCount > 1 ? "s" : ""} ${raiseCount > 1 ? "need" : "needs"} attention`;
+      }
+
+      const updatedText = lastUpdated
+        ? `Last updated: ${new Date(lastUpdated).toLocaleString("en-GB")}`
+        : "No data yet \u2014 click Refresh Data to run a scrape";
+
+      const rows = data.map(day => {
+        const isAction = day.recommendation !== "hold";
+        const competitorCells = COMPETITORS.map(name => {
+          const comp = day.competitors.find(c => c.competitor === name);
+          if (!comp) return '<td style="text-align:center"><span class="dot grey" title="No data"></span></td>';
+          if (comp.tickets !== undefined && comp.tickets !== null) {
+            const cls = stockClass(comp.tickets);
+            const wbT = day.wbTrend || {};
+            const t24 = trendHTML(comp.tickets, wbT.d1);
+            const t7d = trendHTML(comp.tickets, wbT.d7);
+            const trend = t7d || t24;
+            return `<td style="text-align:center"><span class="${cls}" title="${name}: ${comp.tickets} tickets">${comp.tickets}</span>${trend}</td>`;
+          }
+          return comp.available
+            ? `<td style="text-align:center"><span class="dot green" title="${name}: Available"></span></td>`
+            : `<td style="text-align:center"><span class="dot red" title="${name}: Sold Out"></span></td>`;
+        }).join("");
+
+        const recMap = {
+          "wb-low": { cls: "rec-badge rec-wb-low", text: "WB Low Stock" },
+          "yield": { cls: "rec-badge rec-yield", text: "WB & Partner Sold Out" },
+          "wb-sold-out": { cls: "rec-badge rec-wb-sold-out", text: "WB Sold Out" },
+          "hold": { cls: "rec-hold", text: "Hold" }
+        };
+        const rec = recMap[day.recommendation] || recMap["hold"];
+
+        const hxT = day.hxTrend || {};
+        const hxTrend = trendHTML(day.totalStock, hxT.d7) || trendHTML(day.totalStock, hxT.d1);
+
+        return `<tr class="${isAction ? 'raise-row' : ''}" data-date="${day.date}" onclick="openDateModal('${day.date}')">
+          <td class="date-cell">${formatDate(day.date)}</td>
+          <td class="${stockClass(day.totalStock)}">${day.totalStock}${hxTrend}</td>
+          ${competitorCells}
+          <td><span class="${rec.cls}">${rec.text}</span></td>
+        </tr>`;
+      }).join("");
+
+      const competitorHeaders = COMPETITORS
+        .map(name => `<th style="text-align:center">${SHORT_NAMES[name]}</th>`)
+        .join("");
+
+      app.innerHTML = `
+        <div class="hero-banner">
+          <svg class="flourish" width="80" height="16" viewBox="0 0 80 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 8h30c2 0 4-3 6-6s4-2 4 0 2 6 4 6h30" stroke="#8cd0e5" stroke-width="0.8" fill="none" opacity="0.5"/>
+            <path d="M6 8h24c2 0 4 3 6 6s4 2 4 0 2-6 4-6h24" stroke="#8cd0e5" stroke-width="0.8" fill="none" opacity="0.3"/>
+          </svg>
+          <h1>Market View</h1>
+          <div class="subtitle">Pricing Intelligence</div>
+          <svg class="flourish" width="80" height="16" viewBox="0 0 80 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-top:6px">
+            <path d="M0 8h30c2 0 4 3 6 6s4 2 4 0 2-6 4-6h30" stroke="#8cd0e5" stroke-width="0.8" fill="none" opacity="0.5"/>
+            <path d="M6 8h24c2 0 4-3 6-6s4-2 4 0 2 6 4 6h24" stroke="#8cd0e5" stroke-width="0.8" fill="none" opacity="0.3"/>
+          </svg>
+          <div class="last-updated">${updatedText}</div>
+          <div style="display:flex;gap:12px;justify-content:center;align-items:center;margin-top:18px">
+            <button class="scrape-btn" id="scrape-btn" onclick="triggerScrape()">Refresh Data</button>
+            <button class="scrape-btn" id="hx-btn" style="background:var(--text-muted);color:var(--navy);font-size:11px;padding:10px 20px" onclick="showHXModal()">Checking HX...</button>
+          </div>
+        </div>
+
+        <div class="container">
+          <div class="alert-banner ${bannerClass}">${bannerText}</div>
+
+          ${(() => {
+            const yieldDates = data.filter(d => d.recommendation === "yield");
+            if (yieldDates.length === 0) return "";
+            const chips = yieldDates.map(d => {
+              const dateLabel = new Date(d.date + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+              return '<div class="urgent-date">' + dateLabel + '<span class="stock-info">Your stock: ' + d.totalStock + '</span></div>';
+            }).join("");
+            return '<div class="urgent-panel"><h3>WB & Partner Sold Out</h3><div class="urgent-dates">' + chips + '</div></div>';
+          })()}
+
+
+          <div class="section-heading"><span>Availability</span></div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Your Stock</th>
+                  ${competitorHeaders}
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+
+          <div class="footer">Mischief Managed</div>
+        </div>
+      `;
+    }
+
+    async function triggerScrape() {
+      const btn = document.getElementById("scrape-btn");
+      btn.disabled = true;
+      btn.textContent = "Scraping...";
+
+      try {
+        const res = await fetch("/api/scrape", { method: "POST" });
+        const data = await res.json();
+        if (data.status === "already_running") {
+          btn.textContent = "Already Running...";
+        }
+
+        const poll = setInterval(async () => {
+          const statusRes = await fetch("/api/scrape-status");
+          const { running } = await statusRes.json();
+          if (!running) {
+            clearInterval(poll);
+            btn.disabled = false;
+            btn.textContent = "Refresh Data";
+            loadData();
+          }
+        }, 3000);
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = "Refresh Data";
+      }
+    }
+
+    window.triggerScrape = triggerScrape;
+
+    async function checkHXStatus() {
+      try {
+        const res = await fetch("/api/hx-status");
+        const data = await res.json();
+        updateHXButton(data);
+      } catch {
+        updateHXButton({ connected: false, valid: false });
+      }
+    }
+
+    function updateHXButton(data) {
+      const btn = document.getElementById("hx-btn");
+      if (!btn) return;
+      if (data.connected && data.valid) {
+        btn.style.background = "var(--teal)";
+        btn.style.color = "#000";
+        btn.textContent = "HX Connected";
+        btn.disabled = false;
+      } else if (data.connected && !data.valid) {
+        btn.style.background = "#ff6900";
+        btn.style.color = "#000";
+        btn.textContent = "HX Expired - Reconnect";
+        btn.disabled = false;
+      } else {
+        btn.style.background = "#cf2e2e";
+        btn.style.color = "#fff";
+        btn.textContent = "Connect HX";
+        btn.disabled = false;
+      }
+    }
+
+    function showHXModal() {
+      const overlay = document.createElement("div");
+      overlay.className = "modal-overlay";
+      overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+      overlay.innerHTML = `
+        <div class="modal" style="max-width:600px">
+          <div class="modal-header">
+            <h2>Connect HX Rate Checker</h2>
+            <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div style="font-size:14px;line-height:1.8;color:var(--text-light)">
+              <p style="margin-bottom:16px;color:var(--gold);font-weight:700">Follow these 4 steps:</p>
+
+              <p><strong style="color:var(--blue-light)">Step 1:</strong> Open the rate checker in a new tab and log in with Google:</p>
+              <a href="https://rate-checker.internalapps.holidayextras.com" target="_blank"
+                style="display:block;color:var(--gold);margin:8px 0 16px;word-break:break-all">
+                rate-checker.internalapps.holidayextras.com</a>
+
+              <p><strong style="color:var(--blue-light)">Step 2:</strong> Once logged in and you see the rate checker page, open DevTools:</p>
+              <p style="margin:4px 0 16px;color:var(--gold);font-family:monospace;font-size:13px">
+                Mac: Cmd + Option + I &nbsp;&nbsp;|&nbsp;&nbsp; Windows: F12</p>
+
+              <p><strong style="color:var(--blue-light)">Step 3:</strong> In DevTools, click <strong>Application</strong> tab (top bar) &rarr;
+                <strong>Cookies</strong> (left sidebar) &rarr; click the rate-checker URL &rarr;
+                find the row named <strong style="color:var(--gold)">CF_AppSession</strong> &rarr;
+                double-click its <strong>Value</strong> and copy it (Cmd/Ctrl+C)</p>
+
+              <p style="margin-top:16px"><strong style="color:var(--blue-light)">Step 4:</strong> Paste the cookie value below:</p>
+              <div style="display:flex;gap:8px;margin-top:8px">
+                <input id="hx-cookie-input" type="text" placeholder="Paste CF_AppSession value here..."
+                  style="flex:1;padding:10px 12px;background:var(--navy-dark);border:1px solid var(--blue);color:#fff;font-family:monospace;font-size:13px">
+                <input id="hx-name-input" type="text" placeholder="Your name"
+                  style="width:120px;padding:10px 12px;background:var(--navy-dark);border:1px solid var(--blue);color:#fff;font-size:13px">
+              </div>
+              <button onclick="submitHXCookie()" class="scrape-btn"
+                style="margin-top:12px;width:100%;text-align:center">Save & Connect</button>
+              <p id="hx-save-msg" style="margin-top:8px;font-size:12px;display:none"></p>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      const escHandler = (e) => {
+        if (e.key === "Escape") { overlay.remove(); document.removeEventListener("keydown", escHandler); }
+      };
+      document.addEventListener("keydown", escHandler);
+    }
+    window.showHXModal = showHXModal;
+
+    async function submitHXCookie() {
+      const input = document.getElementById("hx-cookie-input");
+      const nameInput = document.getElementById("hx-name-input");
+      const msg = document.getElementById("hx-save-msg");
+      const value = input.value.trim();
+      if (!value) {
+        msg.style.display = "block";
+        msg.style.color = "#cf2e2e";
+        msg.textContent = "Please paste the cookie value first.";
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/hx-cookies", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cfAppSession: value, name: nameInput.value.trim() }),
+        });
+        const data = await res.json();
+        if (data.status === "saved") {
+          msg.style.display = "block";
+          msg.style.color = "var(--teal)";
+          msg.textContent = "Connected! You can close this and refresh data.";
+          checkHXStatus();
+          setTimeout(() => {
+            const overlay = document.querySelector(".modal-overlay");
+            if (overlay) overlay.remove();
+          }, 2000);
+        }
+      } catch {
+        msg.style.display = "block";
+        msg.style.color = "#cf2e2e";
+        msg.textContent = "Failed to save. Please try again.";
+      }
+    }
+    window.submitHXCookie = submitHXCookie;
+
+    async function loadData() {
+      try {
+        const [overviewRes, updatedRes] = await Promise.all([
+          fetch("/api/overview"),
+          fetch("/api/last-updated")
+        ]);
+        const overview = await overviewRes.json();
+        const { lastUpdated } = await updatedRes.json();
+        render(overview, lastUpdated);
+      } catch (err) {
+        document.getElementById("app").innerHTML =
+          '<div class="hero-banner"><div class="error">Could not load data. Is the server running?</div></div>';
+      }
+    }
+
+    loadData().then(() => checkHXStatus());
+    setInterval(loadData, 5 * 60 * 1000);
+
+    // --- Date detail modal ---
+    const SOURCE_LABELS = {
+      wb: "WB Direct",
+      hx: "HX (Your Stock)",
+      golden: "Golden Tours",
+      booking: "Booking.com",
+      premium: "Premium Tours",
+      gyg: "GetYourGuide"
+    };
+    const SOURCE_COLORS = {
+      wb: "#cf2e2e",
+      hx: "#66bbb0",
+      golden: "#f6bd49",
+      booking: "#8cd0e5",
+      premium: "#9b51e0",
+      gyg: "#ff5533"
+    };
+
+    async function openDateModal(dateStr) {
+      const dateLabel = new Date(dateStr + "T00:00:00").toLocaleDateString("en-GB", {
+        weekday: "long", day: "numeric", month: "long", year: "numeric"
+      });
+
+      // Create overlay
+      const overlay = document.createElement("div");
+      overlay.className = "modal-overlay";
+      overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+      overlay.innerHTML = `
+        <div class="modal">
+          <div class="modal-header">
+            <h2>${dateLabel}</h2>
+            <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="no-history">Loading history...</div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      // Close on Escape
+      const escHandler = (e) => {
+        if (e.key === "Escape") { overlay.remove(); document.removeEventListener("keydown", escHandler); }
+      };
+      document.addEventListener("keydown", escHandler);
+
+      // Fetch history
+      try {
+        const res = await fetch("/api/date-history/" + dateStr);
+        const history = await res.json();
+        renderModal(overlay.querySelector(".modal-body"), dateStr, history);
+      } catch (err) {
+        overlay.querySelector(".modal-body").innerHTML =
+          '<div class="no-history">Failed to load history.</div>';
+      }
+    }
+    window.openDateModal = openDateModal;
+
+    function renderModal(container, dateStr, history) {
+      if (history.length === 0) {
+        container.innerHTML = '<div class="no-history">No history yet for this date. Data will build up over daily scrapes.</div>';
+        return;
+      }
+
+      // Group by recorded_date
+      const byDay = new Map();
+      for (const h of history) {
+        if (!byDay.has(h.recordedDate)) byDay.set(h.recordedDate, {});
+        byDay.get(h.recordedDate)[h.source] = h.tickets;
+      }
+      const days = Array.from(byDay.keys()).sort();
+
+      // Find which sources have ticket data (wb/hx) vs status data (golden/booking/premium)
+      const ticketSources = ["wb", "hx"];
+      const statusSources = ["golden", "booking", "premium", "gyg"];
+
+      // Build events list (competitor status changes)
+      const events = [];
+      let prevStatus = {};
+      for (const day of days) {
+        const data = byDay.get(day);
+        for (const src of statusSources) {
+          if (data[src] !== undefined) {
+            const prev = prevStatus[src];
+            if (prev !== undefined && prev !== data[src]) {
+              const dayLabel = new Date(day + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+              if (data[src] === 0) {
+                events.push({ day, dayLabel, source: src, type: "sold-out", text: SOURCE_LABELS[src] + " sold out" });
+              } else {
+                events.push({ day, dayLabel, source: src, type: "back", text: SOURCE_LABELS[src] + " back in stock" });
+              }
+            }
+            prevStatus[src] = data[src];
+          }
+        }
+      }
+
+      // Chart
+      const chartHTML = `
+        <div class="chart-container">
+          <canvas id="history-chart"></canvas>
+          <div class="chart-legend">
+            <span><span class="legend-dot" style="background:${SOURCE_COLORS.hx}"></span> HX (Your Stock)</span>
+            <span><span class="legend-dot" style="background:${SOURCE_COLORS.wb}"></span> WB Direct</span>
+          </div>
+        </div>
+      `;
+
+      const eventsHTML = events.length > 0 ? `
+        <div class="events-title">Key Events</div>
+        <ul class="event-list">
+          ${events.map(e => `
+            <li>
+              <span class="event-date-label">${e.dayLabel}</span>
+              <span class="event-badge ${e.type}">${e.type === "sold-out" ? "Sold Out" : "Available"}</span>
+              <span>${e.text}</span>
+            </li>
+          `).join("")}
+        </ul>
+      ` : (days.length <= 1 ? '<div class="no-history">Only one data point so far. Trends will appear after more daily scrapes.</div>' : "");
+
+      container.innerHTML = chartHTML + eventsHTML;
+
+      // Draw chart
+      drawChart(document.getElementById("history-chart"), days, byDay, ticketSources);
+    }
+
+    function drawChart(canvas, days, byDay, sources) {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const W = rect.width - 32;
+      const H = 250;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width = W + "px";
+      canvas.style.height = H + "px";
+
+      const ctx = canvas.getContext("2d");
+      ctx.scale(dpr, dpr);
+
+      const padL = 50, padR = 20, padT = 20, padB = 40;
+      const chartW = W - padL - padR;
+      const chartH = H - padT - padB;
+
+      // Find max value
+      let maxVal = 10;
+      for (const day of days) {
+        const data = byDay.get(day);
+        for (const src of sources) {
+          if (data[src] !== undefined && data[src] > maxVal) maxVal = data[src];
+        }
+      }
+      maxVal = Math.ceil(maxVal / 10) * 10; // Round up to nearest 10
+
+      // Grid
+      ctx.strokeStyle = "rgba(0,87,137,0.15)";
+      ctx.lineWidth = 1;
+      const gridLines = 5;
+      for (let i = 0; i <= gridLines; i++) {
+        const y = padT + (chartH / gridLines) * i;
+        ctx.beginPath();
+        ctx.moveTo(padL, y);
+        ctx.lineTo(padL + chartW, y);
+        ctx.stroke();
+
+        // Y labels
+        const val = Math.round(maxVal - (maxVal / gridLines) * i);
+        ctx.fillStyle = "#7a9bb5";
+        ctx.font = "11px Lora, serif";
+        ctx.textAlign = "right";
+        ctx.fillText(val.toString(), padL - 8, y + 4);
+      }
+
+      // X labels
+      ctx.textAlign = "center";
+      const step = Math.max(1, Math.floor(days.length / 8));
+      for (let i = 0; i < days.length; i += step) {
+        const x = padL + (chartW / Math.max(days.length - 1, 1)) * i;
+        const label = new Date(days[i] + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+        ctx.fillStyle = "#7a9bb5";
+        ctx.fillText(label, x, H - 8);
+      }
+
+      // Draw lines
+      for (const src of sources) {
+        const color = SOURCE_COLORS[src];
+        const points = [];
+        for (let i = 0; i < days.length; i++) {
+          const data = byDay.get(days[i]);
+          if (data[src] !== undefined) {
+            const x = padL + (chartW / Math.max(days.length - 1, 1)) * i;
+            const y = padT + chartH - (data[src] / maxVal) * chartH;
+            points.push({ x, y, val: data[src] });
+          }
+        }
+
+        if (points.length === 0) continue;
+
+        // Fill area
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, padT + chartH);
+        for (const p of points) ctx.lineTo(p.x, p.y);
+        ctx.lineTo(points[points.length - 1].x, padT + chartH);
+        ctx.closePath();
+        ctx.fillStyle = color + "15";
+        ctx.fill();
+
+        // Line
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+          ctx.lineTo(points[i].x, points[i].y);
+        }
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        // Points
+        for (const p of points) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+          ctx.fillStyle = color;
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+          ctx.fillStyle = "#001a30";
+          ctx.fill();
+        }
+
+        // Value labels on points (if not too many)
+        if (points.length <= 14) {
+          ctx.font = "10px Lora, serif";
+          ctx.fillStyle = color;
+          ctx.textAlign = "center";
+          for (const p of points) {
+            ctx.fillText(p.val.toString(), p.x, p.y - 10);
+          }
+        }
+      }
+    }
+  </script>
+</body>
+</html>
