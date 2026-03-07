@@ -47,8 +47,8 @@ async function main() {
     .all() as { date: string; time_slot: string; tickets_available: number }[];
 
   const stockRows = db
-    .prepare(`SELECT date, source, tickets FROM stock_history`)
-    .all() as { date: string; source: string; tickets: number }[];
+    .prepare(`SELECT date, source, tickets, recorded_date FROM stock_history`)
+    .all() as { date: string; source: string; tickets: number; recorded_date: string }[];
 
   const payload: ImportPayload = {
     competitors: competitors.map((r) => ({
@@ -66,6 +66,7 @@ async function main() {
       date: r.date,
       source: r.source,
       tickets: r.tickets,
+      recordedDate: r.recorded_date,
     })),
   };
 
@@ -83,22 +84,54 @@ async function main() {
   }
 
   console.log(`[Push] Pushing to ${REMOTE_URL}...`);
+
+  // Send in chunks to avoid payload size limits
+  const CHUNK = 500;
+  let totalImported = 0;
+
+  for (let i = 0; i < payload.competitors.length; i += CHUNK) {
+    const chunk: ImportPayload = {
+      competitors: payload.competitors.slice(i, i + CHUNK),
+      hxAllocations: i === 0 ? payload.hxAllocations : [],
+      stockSnapshots: [],
+    };
+    const result = await pushChunk(chunk);
+    if (result === null) return;
+    totalImported += result;
+  }
+
+  for (let i = 0; i < payload.stockSnapshots.length; i += CHUNK) {
+    const chunk: ImportPayload = {
+      competitors: [],
+      hxAllocations: [],
+      stockSnapshots: payload.stockSnapshots.slice(i, i + CHUNK),
+    };
+    const result = await pushChunk(chunk);
+    if (result === null) return;
+    totalImported += result;
+  }
+
+  console.log(`[Push] Done — ${totalImported} total records imported`);
+}
+
+async function pushChunk(chunk: ImportPayload): Promise<number | null> {
   const resp = await fetch(`${REMOTE_URL}/api/import`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...(API_KEY ? { "x-api-key": API_KEY } : {}),
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(chunk),
   });
 
   if (!resp.ok) {
     console.error(`[Push] Failed: ${resp.status} ${resp.statusText}`);
-    return;
+    return null;
   }
 
-  const result = await resp.json();
-  console.log(`[Push] Remote imported ${result.imported} records`);
+  const result = (await resp.json()) as { imported: number };
+  console.log(`[Push]   chunk: ${result.imported} records`);
+  return result.imported;
 }
 
 main().catch(console.error);

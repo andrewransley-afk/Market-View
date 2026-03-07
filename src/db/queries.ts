@@ -101,6 +101,20 @@ export function recordStockSnapshot(
   `).run(date, source, tickets);
 }
 
+export function importStockSnapshot(
+  date: string,
+  source: string,
+  tickets: number,
+  recordedDate: string
+): void {
+  const db = getDatabase();
+  db.prepare(`
+    INSERT INTO stock_history (date, source, tickets, recorded_at, recorded_date)
+    VALUES (?, ?, ?, datetime('now'), ?)
+    ON CONFLICT DO NOTHING
+  `).run(date, source, tickets, recordedDate);
+}
+
 export interface StockTrend {
   date: string;
   wbNow: number | null;

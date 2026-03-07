@@ -7,7 +7,7 @@ import {
   getDateHistory,
   upsertCompetitorAvailability,
   upsertHXAllocation,
-  recordStockSnapshot,
+  importStockSnapshot,
 } from "../db/queries";
 import { runDailyJob } from "../scheduler/daily-job";
 
@@ -155,7 +155,7 @@ export function createServer(): express.Express {
 
     if (Array.isArray(stockSnapshots)) {
       for (const s of stockSnapshots) {
-        recordStockSnapshot(s.date, s.source, s.tickets);
+        importStockSnapshot(s.date, s.source, s.tickets, s.recordedDate);
         imported++;
       }
     }
