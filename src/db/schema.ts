@@ -1,4 +1,4 @@
-import { createClient, Client } from "@libsql/client";
+import { Client } from "@libsql/client";
 
 let client: Client;
 
@@ -8,11 +8,14 @@ export function getClient(): Client {
   const url = process.env.TURSO_URL?.trim();
   const authToken = process.env.TURSO_AUTH_TOKEN?.trim();
 
-  if (url) {
-    // Remote Turso database
-    client = createClient({ url, authToken });
+  if (url && url.startsWith("libsql://")) {
+    // Remote Turso — use HTTP transport to avoid cross-fetch/node-fetch issues
+    const httpUrl = url.replace("libsql://", "https://");
+    const { createClient } = require("@libsql/client/http");
+    client = createClient({ url: httpUrl, authToken });
   } else {
-    // Local SQLite file fallback
+    // Local SQLite file
+    const { createClient } = require("@libsql/client");
     const dbPath = process.env.DATABASE_PATH || "./data/market-view.db";
     const fs = require("fs");
     const path = require("path");
