@@ -2,7 +2,13 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import { generateRecommendations } from "../recommendation/engine";
-import { getLatestScrapeTime, getDateHistory } from "../db/queries";
+import {
+  getLatestScrapeTime,
+  getDateHistory,
+  upsertCompetitorAvailability,
+  upsertHXAllocation,
+  recordStockSnapshot,
+} from "../db/queries";
 import { runDailyJob } from "../scheduler/daily-job";
 
 let scrapeRunning = false;
@@ -48,6 +54,10 @@ export function createServer(): express.Express {
 
   // API routes
   app.post("/api/scrape", async (_req, res) => {
+    if (process.env.DASHBOARD_ONLY === "true") {
+      res.json({ status: "dashboard_only", message: "Scraping disabled on cloud. Data is pushed from local machine." });
+      return;
+    }
     if (scrapeRunning) {
       res.json({ status: "already_running" });
       return;
@@ -116,6 +126,42 @@ export function createServer(): express.Express {
       const message = error instanceof Error ? error.message : String(error);
       res.status(500).json({ error: message });
     }
+  });
+
+  // Import endpoint: receive scrape data from local machine
+  app.post("/api/import", (req, res) => {
+    const apiKey = process.env.API_KEY;
+    if (apiKey && req.headers["x-api-key"] !== apiKey) {
+      res.status(401).json({ error: "Invalid API key" });
+      return;
+    }
+
+    const { competitors, hxAllocations, stockSnapshots } = req.body;
+    let imported = 0;
+
+    if (Array.isArray(competitors)) {
+      for (const r of competitors) {
+        upsertCompetitorAvailability(r.competitor, r.date, r.available, r.tickets);
+        imported++;
+      }
+    }
+
+    if (Array.isArray(hxAllocations)) {
+      for (const a of hxAllocations) {
+        upsertHXAllocation(a.date, a.timeSlot, a.ticketsAvailable);
+        imported++;
+      }
+    }
+
+    if (Array.isArray(stockSnapshots)) {
+      for (const s of stockSnapshots) {
+        recordStockSnapshot(s.date, s.source, s.tickets);
+        imported++;
+      }
+    }
+
+    console.log(`[Import] Received ${imported} records`);
+    res.json({ status: "ok", imported });
   });
 
   // Serve frontend static files

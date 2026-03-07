@@ -6,6 +6,7 @@
   "scripts": {
     "start": "npx tsx src/index.ts",
     "scrape-now": "npx tsx src/index.ts --run-now",
+    "scrape-and-push": "npx tsx src/scrape-and-push.ts",
     "hx-login": "npx tsx src/hx-login.ts",
     "test": "vitest run",
     "test:watch": "vitest"

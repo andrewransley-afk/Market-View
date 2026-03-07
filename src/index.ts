@@ -18,8 +18,15 @@ async function main(): Promise<void> {
   // 2. Start dashboard server
   startServer();
 
-  // 3. Check for --run-now flag (manual scrape)
-  if (process.argv.includes("--run-now")) {
+  // 3. Start scheduler (skip on cloud dashboard-only mode)
+  if (process.env.DASHBOARD_ONLY !== "true") {
+    startScheduler();
+  } else {
+    console.log("[Init] Dashboard-only mode — scrapers and scheduler disabled");
+  }
+
+  // 4. Check for --run-now flag (manual scrape)
+  if (process.argv.includes("--run-now") && process.env.DASHBOARD_ONLY !== "true") {
     console.log("\n[Init] --run-now flag detected, triggering scrape...\n");
     await runDailyJob();
   }
