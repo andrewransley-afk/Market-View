@@ -1,6 +1,5 @@
 import express from "express";
 import path from "path";
-import fs from "fs";
 import { generateRecommendations } from "../recommendation/engine";
 import {
   getLatestScrapeTime,
@@ -8,12 +7,12 @@ import {
   upsertCompetitorAvailability,
   upsertHXAllocation,
   importStockSnapshot,
+  getSetting,
+  setSetting,
 } from "../db/queries";
 import { runDailyJob } from "../scheduler/daily-job";
 
 let scrapeRunning = false;
-
-const COOKIE_FILE = path.join(process.cwd(), "data", "hx-cookies.json");
 
 export interface HXCookies {
   cfAppSession: string;
@@ -21,10 +20,11 @@ export interface HXCookies {
   savedBy: string;
 }
 
-export function getHXCookies(): HXCookies | null {
+export async function getHXCookies(): Promise<HXCookies | null> {
   try {
-    if (!fs.existsSync(COOKIE_FILE)) return null;
-    const data = JSON.parse(fs.readFileSync(COOKIE_FILE, "utf-8"));
+    const json = await getSetting("hx_cookies");
+    if (!json) return null;
+    const data = JSON.parse(json);
     if (!data.cfAppSession) return null;
     return data;
   } catch {
@@ -32,13 +32,13 @@ export function getHXCookies(): HXCookies | null {
   }
 }
 
-function saveHXCookies(cfAppSession: string, savedBy: string): void {
+async function saveHXCookies(cfAppSession: string, savedBy: string): Promise<void> {
   const data: HXCookies = {
     cfAppSession,
     savedAt: new Date().toISOString(),
     savedBy,
   };
-  fs.writeFileSync(COOKIE_FILE, JSON.stringify(data, null, 2));
+  await setSetting("hx_cookies", JSON.stringify(data));
 }
 
 // Track whether last scrape had a valid HX session
@@ -54,10 +54,6 @@ export function createServer(): express.Express {
 
   // API routes
   app.post("/api/scrape", async (_req, res) => {
-    if (process.env.DASHBOARD_ONLY === "true") {
-      res.json({ status: "dashboard_only", message: "Scraping disabled on cloud. Data is pushed from local machine." });
-      return;
-    }
     if (scrapeRunning) {
       res.json({ status: "already_running" });
       return;
@@ -96,8 +92,8 @@ export function createServer(): express.Express {
     }
   });
 
-  app.get("/api/hx-status", (_req, res) => {
-    const cookies = getHXCookies();
+  app.get("/api/hx-status", async (_req, res) => {
+    const cookies = await getHXCookies();
     res.json({
       connected: cookies !== null,
       valid: hxSessionValid,
@@ -106,13 +102,13 @@ export function createServer(): express.Express {
     });
   });
 
-  app.post("/api/hx-cookies", (req, res) => {
+  app.post("/api/hx-cookies", async (req, res) => {
     const { cfAppSession, name } = req.body;
     if (!cfAppSession || typeof cfAppSession !== "string") {
       res.status(400).json({ error: "Missing cfAppSession" });
       return;
     }
-    saveHXCookies(cfAppSession.trim(), name || "Unknown");
+    await saveHXCookies(cfAppSession.trim(), name || "Unknown");
     hxSessionValid = true;
     console.log(`[HX] Cookies saved by ${name || "Unknown"}`);
     res.json({ status: "saved" });

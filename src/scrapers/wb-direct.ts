@@ -13,7 +13,7 @@ export const wbDirectScraper: CompetitorScraper = {
   async scrape(startDate: Date, days: number) {
     const results: { date: string; available: boolean; tickets?: number }[] = [];
 
-    const cookies = getHXCookies();
+    const cookies = await getHXCookies();
     if (!cookies) {
       console.log("[WB Direct] No HX cookies. Click 'Connect HX' on the dashboard.");
       return results;

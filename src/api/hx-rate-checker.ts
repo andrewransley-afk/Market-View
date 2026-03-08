@@ -11,7 +11,7 @@ const AVAILABILITY_URL = `${BASE_URL}/#/galaxyConnect/getProductAvailability?isT
 export async function fetchHXAllocation(
   days: number = 90
 ): Promise<HXAllocation[]> {
-  const cookies = getHXCookies();
+  const cookies = await getHXCookies();
   if (!cookies) {
     console.log("[HX] No cookies saved. Click 'Connect HX' on the dashboard.");
     return [];

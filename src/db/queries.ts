@@ -201,3 +201,22 @@ export async function getLatestScrapeTime(): Promise<string | null> {
 
   return (result.rows[0]?.latest as string) || null;
 }
+
+// Settings (used for HX cookie storage in Turso)
+export async function getSetting(key: string): Promise<string | null> {
+  const db = getClient();
+  const result = await db.execute({
+    sql: `SELECT value FROM settings WHERE key = ?`,
+    args: [key],
+  });
+  return result.rows.length > 0 ? (result.rows[0].value as string) : null;
+}
+
+export async function setSetting(key: string, value: string): Promise<void> {
+  const db = getClient();
+  await db.execute({
+    sql: `INSERT INTO settings (key, value) VALUES (?, ?)
+          ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+    args: [key, value],
+  });
+}

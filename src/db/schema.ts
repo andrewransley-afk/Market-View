@@ -62,6 +62,11 @@ export async function initDatabase(): Promise<void> {
       UNIQUE(date, source, recorded_date)
     );
 
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_competitor_date ON competitor_availability(date);
     CREATE INDEX IF NOT EXISTS idx_allocation_date ON hx_allocation(date);
     CREATE INDEX IF NOT EXISTS idx_stock_history_lookup ON stock_history(date, source, recorded_date);
