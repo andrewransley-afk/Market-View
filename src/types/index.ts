@@ -15,7 +15,6 @@ export interface HXAllocation {
 export interface StockChange {
   now: number | null;
   d1: number | null;  // 24h ago
-  d7: number | null;  // 7 days ago
 }
 
 export interface DayOverview {

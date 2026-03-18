@@ -6,7 +6,7 @@ import {
 } from "../db/queries";
 import { formatDate } from "../scrapers/scraper-interface";
 
-export async function generateRecommendations(days: number = 90): Promise<DayOverview[]> {
+export function generateRecommendations(days: number = 90): DayOverview[] {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() + 4);
   const endDate = new Date();
@@ -15,9 +15,9 @@ export async function generateRecommendations(days: number = 90): Promise<DayOve
   const startStr = formatDate(startDate);
   const endStr = formatDate(endDate);
 
-  const competitorData = await getCompetitorAvailability(startStr, endStr);
-  const allocationData = await getHXAllocations(startStr, endStr);
-  const trends = await getStockTrends(startStr, endStr);
+  const competitorData = getCompetitorAvailability(startStr, endStr);
+  const allocationData = getHXAllocations(startStr, endStr);
+  const trends = getStockTrends(startStr, endStr);
 
   // Group by date
   const competitorsByDate = new Map<string, CompetitorAvailability[]>();
@@ -73,8 +73,8 @@ export async function generateRecommendations(days: number = 90): Promise<DayOve
       competitors,
       recommendation,
       soldOutCount,
-      wbTrend: trend ? { now: trend.wbNow, d1: trend.wb24h, d7: trend.wb7d } : undefined,
-      hxTrend: trend ? { now: trend.hxNow, d1: trend.hx24h, d7: trend.hx7d } : undefined,
+      wbTrend: trend ? { now: trend.wbNow, d1: trend.wb24h } : undefined,
+      hxTrend: trend ? { now: trend.hxNow, d1: trend.hx24h } : undefined,
     });
   }
 
@@ -91,7 +91,7 @@ export function calculateRecommendation(
   const wbLow = wbTickets !== null && wbTickets > 0 && wbTickets < 30;
 
   if (wbLow) return "wb-low";
-  if ((wbSoldOut || wbLow) && otherSoldOutCount >= 2) return "yield";
+  if ((wbSoldOut || wbLow) && otherSoldOutCount >= 1) return "yield";
   if (wbSoldOut && otherSoldOutCount === 0) return "wb-sold-out";
 
   return "hold";

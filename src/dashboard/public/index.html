@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Lora:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
   <style>
     @font-face {
       font-family: "Harry Beast";
@@ -85,6 +86,32 @@
       font-style: italic;
       margin-top: 16px;
     }
+
+    .scrape-checklist {
+      margin-top: 16px;
+      display: inline-block;
+      text-align: left;
+      font-family: "Lora", serif;
+      font-size: 13px;
+      color: var(--parchment);
+    }
+    .scrape-checklist-item {
+      padding: 4px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .scrape-checklist-item .icon {
+      width: 18px;
+      text-align: center;
+      font-size: 14px;
+    }
+    .check-pending .icon { color: var(--text-muted); }
+    .check-running .icon { color: var(--gold); }
+    .check-done .icon { color: var(--teal); }
+    .check-failed .icon { color: #cf2e2e; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { display: inline-block; animation: spin 1s linear infinite; }
 
     .scrape-btn {
       display: inline-block;
@@ -207,23 +234,27 @@
     /* Table */
     .table-wrapper {
       background: var(--navy);
-      overflow: hidden;
+      overflow: auto;
+      max-height: 70vh;
       box-shadow: 0 4px 30px rgba(0,0,0,0.4);
     }
 
-    table { width: 100%; border-collapse: collapse; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 
     th {
       background: var(--navy-mid);
       color: var(--blue-light);
       padding: 14px 16px;
-      text-align: left;
+      text-align: center;
       font-family: "Lora", serif;
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 3px;
       text-transform: uppercase;
       border-bottom: 2px solid rgba(0,87,137,0.4);
+      position: sticky;
+      top: 0;
+      z-index: 2;
     }
 
     td {
@@ -231,6 +262,7 @@
       border-bottom: 1px solid rgba(0,87,137,0.15);
       font-size: 14px;
       color: var(--text-light);
+      text-align: center;
     }
 
     tr { transition: background 0.2s; }
@@ -302,6 +334,30 @@
       font-size: 13px;
       color: #fff;
       font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .urgent-date:hover {
+      background: var(--navy);
+      border-color: var(--gold);
+    }
+    .urgent-date .yielded-tag {
+      display: block;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-top: 3px;
+    }
+    .urgent-date .slow-tag {
+      display: block;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #e74c3c;
+      margin-top: 3px;
     }
     .urgent-date .stock-info {
       display: block;
@@ -320,7 +376,9 @@
       letter-spacing: 1px;
       text-transform: uppercase;
       padding: 5px 12px;
-      white-space: nowrap;
+      white-space: normal;
+      max-width: 120px;
+      line-height: 1.3;
     }
     .rec-wb-low {
       background: #ff6900;
@@ -347,9 +405,27 @@
     .stock-zero { color: #2a3a4a; }
 
     /* Trend indicators */
+    .stock-wrap {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+    }
+    .stock-wrap .stock-num {
+      display: inline-block;
+      width: 30px;
+      text-align: right;
+    }
+    .stock-wrap .trend-slot {
+      display: inline-block;
+      width: 30px;
+      text-align: left;
+      padding-left: 4px;
+    }
+
     .trend {
       font-size: 11px;
-      margin-left: 4px;
+      margin-left: 0;
       font-weight: 400;
     }
     .trend-down { color: #cf2e2e; }
@@ -497,6 +573,104 @@
       font-size: 16px;
     }
 
+    .history-calendar {
+      display: inline-block;
+      background: var(--navy);
+      border: 1px solid var(--blue);
+      border-radius: 6px;
+      padding: 16px;
+      text-align: center;
+    }
+    .history-calendar .cal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      color: var(--gold);
+      font-family: "Cinzel Decorative", serif;
+      font-size: 14px;
+    }
+    .history-calendar .cal-nav {
+      background: none;
+      border: 1px solid var(--blue);
+      color: var(--blue-light);
+      cursor: pointer;
+      padding: 4px 10px;
+      font-size: 14px;
+      border-radius: 3px;
+    }
+    .history-calendar .cal-nav:hover { background: var(--navy-mid); }
+    .history-calendar .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 36px);
+      gap: 2px;
+      justify-content: center;
+    }
+    .history-calendar .cal-day-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      padding: 4px 0;
+      text-transform: uppercase;
+    }
+    .history-calendar .cal-day {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      border-radius: 3px;
+    }
+    .history-calendar .cal-day.has-data {
+      background: var(--navy-mid);
+      color: var(--gold);
+      cursor: pointer;
+      font-weight: 700;
+      border: 1px solid var(--blue);
+    }
+    .history-calendar .cal-day.has-data:hover {
+      background: var(--blue);
+      color: #fff;
+    }
+    .history-calendar .cal-day.selected {
+      background: var(--gold);
+      color: var(--navy-dark);
+    }
+    .history-calendar .cal-day.today {
+      border: 1px solid var(--teal);
+    }
+
+    .price-tag {
+      display: inline-block;
+      background: var(--gold);
+      color: var(--navy-dark);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-left: 4px;
+      cursor: pointer;
+      vertical-align: middle;
+    }
+    .price-tag:hover { background: var(--gold-dark); }
+    .price-tag.price-up { background: var(--teal); color: #000; }
+    .price-tag.price-down { background: #cf2e2e; color: #fff; }
+    .impact-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 0;
+      font-size: 12px;
+    }
+    .impact-bar .bar {
+      height: 8px;
+      border-radius: 4px;
+      min-width: 2px;
+    }
+    .impact-bar .bar-hx { background: var(--gold); }
+    .impact-bar .bar-wb { background: var(--blue-light); }
+
     .footer {
       text-align: center;
       margin-top: 30px;
@@ -585,18 +759,21 @@
         const isAction = day.recommendation !== "hold";
         const competitorCells = COMPETITORS.map(name => {
           const comp = day.competitors.find(c => c.competitor === name);
-          if (!comp) return '<td style="text-align:center"><span class="dot grey" title="No data"></span></td>';
+          if (!comp) return '<td><span class="dot grey" title="No data"></span></td>';
           if (comp.tickets !== undefined && comp.tickets !== null) {
+            if (comp.tickets === 0 && name === "WB Studio Tour Direct") {
+              const wbT = day.wbTrend || {};
+              const trend = trendHTML(comp.tickets, wbT.d1);
+              return `<td><span class="stock-wrap"><span class="stock-num" style="color:#cf2e2e;font-weight:bold;font-size:1.1em" title="${name}: Sold Out">\u2716</span><span class="trend-slot">${trend}</span></span></td>`;
+            }
             const cls = stockClass(comp.tickets);
             const wbT = day.wbTrend || {};
-            const t24 = trendHTML(comp.tickets, wbT.d1);
-            const t7d = trendHTML(comp.tickets, wbT.d7);
-            const trend = t7d || t24;
-            return `<td style="text-align:center"><span class="${cls}" title="${name}: ${comp.tickets} tickets">${comp.tickets}</span>${trend}</td>`;
+            const trend = trendHTML(comp.tickets, wbT.d1);
+            return `<td><span class="stock-wrap"><span class="stock-num ${cls}" title="${name}: ${comp.tickets} tickets">${comp.tickets}</span><span class="trend-slot">${trend}</span></span></td>`;
           }
           return comp.available
-            ? `<td style="text-align:center"><span class="dot green" title="${name}: Available"></span></td>`
-            : `<td style="text-align:center"><span class="dot red" title="${name}: Sold Out"></span></td>`;
+            ? '<td><span class="dot green" title="' + name + ': Available"></span></td>'
+            : '<td><span class="dot red" title="' + name + ': Sold Out"></span></td>';
         }).join("");
 
         const recMap = {
@@ -608,26 +785,36 @@
         const rec = recMap[day.recommendation] || recMap["hold"];
 
         const hxT = day.hxTrend || {};
-        const hxTrend = trendHTML(day.totalStock, hxT.d7) || trendHTML(day.totalStock, hxT.d1);
+        const hxTrend = trendHTML(day.totalStock, hxT.d1);
+
+        let yieldCell = '<span style="color:var(--text-muted);font-style:italic">-</span>';
+        if (day.yieldRate !== undefined) {
+          let changeTag = "";
+          if (day.priceChange) {
+            const increment = day.priceChange.newPrice;
+            const sign = increment > 0 ? "+" : "";
+            const tagCls = increment > 0 ? "price-tag price-up" : increment < 0 ? "price-tag price-down" : "price-tag";
+            changeTag = `<span class="${tagCls}" onclick="event.stopPropagation();showPriceImpact('${day.date}')" title="Last change: ${sign}\u00A3${Math.abs(increment).toFixed(2)}">${sign}\u00A3${increment.toFixed(2)}</span>`;
+          }
+          yieldCell = `<span style="display:inline-flex;align-items:center;white-space:nowrap;gap:4px"><span style="font-weight:700">\u00A3${day.yieldRate}</span>${changeTag}</span>`;
+        }
 
         return `<tr class="${isAction ? 'raise-row' : ''}" data-date="${day.date}" onclick="openDateModal('${day.date}')">
           <td class="date-cell">${formatDate(day.date)}</td>
-          <td class="${stockClass(day.totalStock)}">${day.totalStock}${hxTrend}</td>
+          <td class="${stockClass(day.totalStock)}"><span class="stock-wrap"><span class="stock-num">${day.totalStock}</span><span class="trend-slot">${hxTrend}</span></span></td>
           ${competitorCells}
           <td><span class="${rec.cls}">${rec.text}</span></td>
+          <td>${yieldCell}</td>
         </tr>`;
       }).join("");
 
       const competitorHeaders = COMPETITORS
-        .map(name => `<th style="text-align:center">${SHORT_NAMES[name]}</th>`)
+        .map(name => `<th>${SHORT_NAMES[name]}</th>`)
         .join("");
 
       app.innerHTML = `
         <div class="hero-banner">
-          <svg class="flourish" width="80" height="16" viewBox="0 0 80 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 8h30c2 0 4-3 6-6s4-2 4 0 2 6 4 6h30" stroke="#8cd0e5" stroke-width="0.8" fill="none" opacity="0.5"/>
-            <path d="M6 8h24c2 0 4 3 6 6s4 2 4 0 2-6 4-6h24" stroke="#8cd0e5" stroke-width="0.8" fill="none" opacity="0.3"/>
-          </svg>
+          <img src="/logo-hp.svg" alt="Warner Bros Studio Tour" style="height:60px;margin-bottom:12px;opacity:0.9">
           <h1>Market View</h1>
           <div class="subtitle">Pricing Intelligence</div>
           <svg class="flourish" width="80" height="16" viewBox="0 0 80 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-top:6px">
@@ -638,6 +825,8 @@
           <div style="display:flex;gap:12px;justify-content:center;align-items:center;margin-top:18px">
             <button class="scrape-btn" id="scrape-btn" onclick="triggerScrape()">Refresh Data</button>
             <button class="scrape-btn" id="hx-btn" style="background:var(--text-muted);color:var(--navy);font-size:11px;padding:10px 20px" onclick="showHXModal()">Checking HX...</button>
+            <button class="scrape-btn" style="background:var(--blue);font-size:11px;padding:10px 20px" onclick="downloadPDF()">Download PDF</button>
+            <button class="scrape-btn" id="publish-btn" style="background:var(--teal);color:#000;font-size:11px;padding:10px 20px" onclick="publishSnapshot()">Publish</button>
           </div>
         </div>
 
@@ -647,9 +836,16 @@
           ${(() => {
             const yieldDates = data.filter(d => d.recommendation === "yield");
             if (yieldDates.length === 0) return "";
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
             const chips = yieldDates.map(d => {
               const dateLabel = new Date(d.date + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
-              return '<div class="urgent-date">' + dateLabel + '<span class="stock-info">Your stock: ' + d.totalStock + '</span></div>';
+              let tab = "";
+              if (d.priceChange) {
+                const cd = new Date(d.priceChange.changedDate || d.priceChange.changedAt);
+                if (cd >= sevenDaysAgo) tab = '<span class="yielded-tag">Yielded</span>';
+              }
+              return '<div class="urgent-date" onclick="openDateModal(\'' + d.date + '\')">' + dateLabel + '<span class="stock-info">Your stock: ' + d.totalStock + '</span>' + tab + '</div>';
             }).join("");
             return '<div class="urgent-panel"><h3>WB & Partner Sold Out</h3><div class="urgent-dates">' + chips + '</div></div>';
           })()}
@@ -664,22 +860,375 @@
                   <th>Date</th>
                   <th>Your Stock</th>
                   ${competitorHeaders}
-                  <th>Action</th>
+                  <th>Update</th>
+                  <th>Yield</th>
                 </tr>
               </thead>
               <tbody>${rows}</tbody>
             </table>
           </div>
 
+          <div style="margin-top:32px;text-align:center">
+            <div style="font-family:'Cinzel Decorative',serif;color:var(--gold);font-size:16px;margin-bottom:12px">Historical View</div>
+            <p style="color:var(--text-muted);font-size:12px;margin-bottom:14px">Select a date to see what the market looked like that day</p>
+            <div id="history-calendar" class="history-calendar"></div>
+            <div style="margin-top:8px">
+              <button class="scrape-btn" id="clear-history-btn" style="margin-top:0;padding:8px 20px;font-size:11px;background:var(--text-muted);display:none" onclick="clearHistorical()">Back to Live</button>
+            </div>
+            <div id="historical-view" style="margin-top:20px"></div>
+          </div>
+
           <div class="footer">Mischief Managed</div>
         </div>
       `;
+      loadHistoricalDates();
+    }
+
+    let historicalDatesSet = new Set();
+    let calendarMonth = new Date().getMonth();
+    let calendarYear = new Date().getFullYear();
+    let selectedHistDate = null;
+
+    async function loadHistoricalDates() {
+      try {
+        const dates = window.__STATIC_MODE__
+          ? (window.__STATIC_DATA__.historicalDates || [])
+          : await fetch("/api/historical-dates").then(r => r.json());
+        historicalDatesSet = new Set(dates);
+        renderCalendar();
+      } catch {}
+    }
+
+    function renderCalendar() {
+      const container = document.getElementById("history-calendar");
+      if (!container) return;
+
+      const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      const dayLabels = ["Mo","Tu","We","Th","Fr","Sa","Su"];
+
+      const firstDay = new Date(calendarYear, calendarMonth, 1);
+      const lastDay = new Date(calendarYear, calendarMonth + 1, 0);
+      let startDay = firstDay.getDay() - 1;
+      if (startDay < 0) startDay = 6;
+
+      const today = new Date().toISOString().split("T")[0];
+
+      let cells = dayLabels.map(d => `<div class="cal-day-label">${d}</div>`).join("");
+      for (let i = 0; i < startDay; i++) {
+        cells += '<div class="cal-day"></div>';
+      }
+      for (let d = 1; d <= lastDay.getDate(); d++) {
+        const dateStr = `${calendarYear}-${String(calendarMonth+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+        const hasData = historicalDatesSet.has(dateStr);
+        const isToday = dateStr === today;
+        const isSelected = dateStr === selectedHistDate;
+        let cls = "cal-day";
+        if (hasData) cls += " has-data";
+        if (isToday) cls += " today";
+        if (isSelected) cls += " selected";
+        const onclick = hasData ? `onclick="selectHistoricalDate('${dateStr}')"` : "";
+        cells += `<div class="${cls}" ${onclick}>${d}</div>`;
+      }
+
+      container.innerHTML = `
+        <div class="cal-header">
+          <button class="cal-nav" onclick="changeCalMonth(-1)">&lsaquo;</button>
+          <span>${monthNames[calendarMonth]} ${calendarYear}</span>
+          <button class="cal-nav" onclick="changeCalMonth(1)">&rsaquo;</button>
+        </div>
+        <div class="cal-grid">${cells}</div>
+      `;
+    }
+
+    function changeCalMonth(dir) {
+      calendarMonth += dir;
+      if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
+      if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
+      renderCalendar();
+    }
+    window.changeCalMonth = changeCalMonth;
+
+    function selectHistoricalDate(date) {
+      selectedHistDate = date;
+      renderCalendar();
+      loadHistorical(date);
+    }
+    window.selectHistoricalDate = selectHistoricalDate;
+
+    async function loadHistorical(date) {
+      if (!date) return;
+
+      const container = document.getElementById("historical-view");
+      container.innerHTML = '<div style="color:var(--text-muted)">Loading...</div>';
+
+      try {
+        const data = window.__STATIC_MODE__
+          ? (window.__STATIC_DATA__.historicalSnapshots[date] || [])
+          : await fetch(`/api/historical/${date}`).then(r => r.json());
+
+        const sourceLabels = {
+          wb: "WB Direct",
+          hx: "HX Stock",
+          golden: "Golden Tours",
+          booking: "Booking.com",
+          premium: "Premium Tours",
+          gyg: "GetYourGuide",
+        };
+
+        const rows = data.map(day => {
+          const wbCell = day.wb === null ? '<td style="text-align:center;color:var(--text-muted)">-</td>'
+            : day.wb === 0 ? '<td style="text-align:center"><span style="color:#cf2e2e;font-weight:bold">\u2716</span></td>'
+            : `<td style="text-align:center" class="${stockClass(day.wb)}">${day.wb}</td>`;
+          const hxCell = day.hx === null ? '<td style="text-align:center;color:var(--text-muted)">-</td>'
+            : `<td style="text-align:center" class="${stockClass(day.hx)}">${day.hx}</td>`;
+
+          const partnerCells = ["golden", "booking", "premium", "gyg"].map(src => {
+            const val = day[src];
+            if (val === null || val === undefined) return '<td style="text-align:center;color:var(--text-muted)">-</td>';
+            if (val === 1) return '<td style="text-align:center"><span class="dot green" title="Available"></span></td>';
+            return '<td style="text-align:center"><span class="dot red" title="Sold Out"></span></td>';
+          }).join("");
+
+          return `<tr>
+            <td class="date-cell">${formatDate(day.date)}</td>
+            ${wbCell}${hxCell}${partnerCells}
+          </tr>`;
+        }).join("");
+
+        container.innerHTML = `
+          <div style="font-family:'Cinzel Decorative',serif;color:var(--blue-light);font-size:14px;margin-bottom:10px">
+            Snapshot from ${formatDate(date)}
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>WB Direct</th>
+                  <th>HX Stock</th>
+                  <th>Golden Tours</th>
+                  <th>Booking.com</th>
+                  <th>Premium Tours</th>
+                  <th>GetYourGuide</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        `;
+
+        document.getElementById("clear-history-btn").style.display = "inline-block";
+      } catch {
+        container.innerHTML = '<div style="color:#cf2e2e">Failed to load historical data</div>';
+      }
+    }
+    window.loadHistorical = loadHistorical;
+
+    function clearHistorical() {
+      document.getElementById("historical-view").innerHTML = "";
+      document.getElementById("clear-history-btn").style.display = "none";
+      selectedHistDate = null;
+      renderCalendar();
+    }
+    window.clearHistorical = clearHistorical;
+
+    async function showPriceImpact(dateStr) {
+      const overlay = document.createElement("div");
+      overlay.className = "modal-overlay";
+      overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+      const dateLabel = new Date(dateStr + "T00:00:00").toLocaleDateString("en-GB", {
+        weekday: "long", day: "numeric", month: "long", year: "numeric"
+      });
+
+      overlay.innerHTML = `
+        <div class="modal">
+          <div class="modal-header">
+            <h2>Price Impact: ${dateLabel}</h2>
+            <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="no-history">Loading...</div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      const escHandler = (e) => {
+        if (e.key === "Escape") { overlay.remove(); document.removeEventListener("keydown", escHandler); }
+      };
+      document.addEventListener("keydown", escHandler);
+
+      try {
+        const { priceChange, history, impact } = window.__STATIC_MODE__
+          ? (window.__STATIC_DATA__.priceChangeDetail[dateStr] || { priceChange: null, history: [], impact: [] })
+          : await fetch("/api/price-change/" + dateStr).then(r => r.json());
+        const body = overlay.querySelector(".modal-body");
+
+        if (!priceChange) {
+          body.innerHTML = '<div class="no-history">No price change recorded for this date.</div>';
+          return;
+        }
+
+        const increment = priceChange.newPrice;
+        const sign = increment > 0 ? "+" : "";
+        const incColor = increment > 0 ? "#cf2e2e" : "var(--teal)";
+
+        let summaryHTML = `
+          <div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px">
+            <div>
+              <div style="font-size:11px;color:var(--text-muted)">Latest Change</div>
+              <div style="font-size:18px;font-weight:700;color:${incColor}">
+                ${sign}\u00A3${Math.abs(increment).toFixed(2)}
+              </div>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--text-muted)">Changed On</div>
+              <div style="font-size:14px">${formatDate(priceChange.changedDate)}</div>
+            </div>
+            ${priceChange.note ? `<div><div style="font-size:11px;color:var(--text-muted)">Note</div><div style="font-size:14px">${priceChange.note}</div></div>` : ""}
+          </div>
+          <div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px">
+            <div>
+              <div style="font-size:11px;color:var(--text-muted)">HX Stock at Change</div>
+              <div style="font-size:16px;font-weight:700" class="${stockClass(priceChange.hxStockAtChange || 0)}">${priceChange.hxStockAtChange ?? '-'}</div>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--text-muted)">WB Stock at Change</div>
+              <div style="font-size:16px;font-weight:700" class="${stockClass(priceChange.wbStockAtChange || 0)}">${priceChange.wbStockAtChange ?? '-'}</div>
+            </div>
+          </div>
+        `;
+
+        // Price change history timeline
+        let historyHTML = "";
+        if (history && history.length > 1) {
+          historyHTML = `
+            <div style="border-top:1px solid var(--navy-mid);padding-top:12px;margin-bottom:16px">
+              <div style="color:var(--gold);font-weight:700;font-size:13px;margin-bottom:10px">Change History (${history.length} changes)</div>
+              <div style="display:flex;flex-direction:column;gap:0;position:relative;padding-left:16px">
+                ${history.map((h, idx) => {
+                  const inc = h.newPrice;
+                  const s = inc > 0 ? "+" : "";
+                  const c = inc > 0 ? "#cf2e2e" : inc < 0 ? "var(--teal)" : "var(--text-muted)";
+                  const isLatest = idx === 0;
+                  const dotSize = isLatest ? 10 : 8;
+                  const dotColor = isLatest ? "var(--gold)" : "var(--text-muted)";
+                  return `
+                    <div style="display:flex;align-items:flex-start;gap:12px;padding-bottom:${idx < history.length - 1 ? '14' : '0'}px;position:relative">
+                      <div style="position:absolute;left:-16px;top:3px;width:${dotSize}px;height:${dotSize}px;border-radius:50%;background:${dotColor};border:2px solid var(--navy-dark);z-index:1"></div>
+                      ${idx < history.length - 1 ? '<div style="position:absolute;left:-12px;top:13px;bottom:0;width:2px;background:var(--navy-mid)"></div>' : ''}
+                      <div style="flex:1">
+                        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                          <span style="font-size:12px;color:${isLatest ? '#fff' : 'var(--text-muted)'};font-weight:${isLatest ? '700' : '400'}">${formatDate(h.changedDate)}</span>
+                          <span style="font-size:13px;font-weight:700;color:${c}">${s}\u00A3${Math.abs(inc).toFixed(2)}</span>
+                          ${isLatest ? '<span style="font-size:9px;background:var(--gold);color:var(--navy-dark);padding:1px 5px;border-radius:3px;font-weight:700">LATEST</span>' : ''}
+                        </div>
+                        ${h.note ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px">${h.note}</div>` : ''}
+                        ${h.hxStockAtChange != null || h.wbStockAtChange != null ? `<div style="font-size:10px;color:var(--text-muted);margin-top:2px">HX: ${h.hxStockAtChange ?? '-'} &middot; WB: ${h.wbStockAtChange ?? '-'}</div>` : ''}
+                      </div>
+                    </div>
+                  `;
+                }).join("")}
+              </div>
+            </div>
+          `;
+        }
+
+        let impactHTML = "";
+        if (impact.length > 1) {
+          const first = impact[0];
+          const last = impact[impact.length - 1];
+          const startHx = first.hx || 0;
+          const currentHx = last.hx || 0;
+          const startWb = first.wb || 0;
+          const currentWb = last.wb || 0;
+          const hxPct = startHx > 0 ? Math.round(currentHx / startHx * 100) : 0;
+          const wbPct = startWb > 0 ? Math.round(currentWb / startWb * 100) : 0;
+          const hxSold = startHx - currentHx;
+          const wbSold = startWb - currentWb;
+          impactHTML = `
+            <div style="border-top:1px solid var(--navy-mid);padding-top:12px">
+              <div style="color:var(--gold);font-weight:700;font-size:13px;margin-bottom:10px">Stock Movement Since Change</div>
+              <div style="margin-bottom:10px">
+                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+                  <span style="color:var(--gold);font-weight:600">HX Stock</span>
+                  <span style="color:var(--text-muted)">${currentHx} remaining of ${startHx} (${hxSold} sold)</span>
+                </div>
+                <div style="background:var(--navy-mid);border-radius:6px;height:14px;overflow:hidden">
+                  <div style="height:100%;width:${hxPct}%;background:var(--gold);border-radius:6px;transition:width 0.4s"></div>
+                </div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+                  <span style="color:var(--blue-light);font-weight:600">WB Stock</span>
+                  <span style="color:var(--text-muted)">${currentWb} remaining of ${startWb} (${wbSold} sold)</span>
+                </div>
+                <div style="background:var(--navy-mid);border-radius:6px;height:14px;overflow:hidden">
+                  <div style="height:100%;width:${wbPct}%;background:var(--blue-light);border-radius:6px;transition:width 0.4s"></div>
+                </div>
+              </div>
+              <div style="font-size:10px;color:var(--text-muted);margin-top:6px">Since ${formatDate(first.recordedDate)} \u2192 ${formatDate(last.recordedDate)}</div>
+            </div>
+          `;
+        } else {
+          impactHTML = '<div class="no-history" style="margin-top:12px">Impact data will appear after more daily scrapes.</div>';
+        }
+
+        body.innerHTML = summaryHTML + historyHTML + impactHTML;
+      } catch {
+        overlay.querySelector(".modal-body").innerHTML = '<div class="no-history">Failed to load data.</div>';
+      }
+    }
+    window.showPriceImpact = showPriceImpact;
+
+    async function publishSnapshot() {
+      const btn = document.getElementById("publish-btn");
+      btn.disabled = true;
+      btn.textContent = "Publishing...";
+      try {
+        const res = await fetch("/api/publish", { method: "POST" });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        alert("Published! View at:\\n" + data.url);
+      } catch (err) {
+        alert("Publish failed: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Publish";
+      }
+    }
+
+    function downloadPDF() {
+      const today = new Date().toISOString().split("T")[0];
+      const element = document.getElementById("app");
+      html2pdf()
+        .set({
+          margin: [10, 5, 10, 5],
+          filename: `Market-View-${today}.pdf`,
+          image: { type: "jpeg", quality: 0.95 },
+          html2canvas: { scale: 2, useCORS: true, backgroundColor: "#001a30" },
+          jsPDF: { unit: "mm", format: "a3", orientation: "landscape" },
+          pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+        })
+        .from(element)
+        .save();
     }
 
     async function triggerScrape() {
       const btn = document.getElementById("scrape-btn");
       btn.disabled = true;
       btn.textContent = "Scraping...";
+
+      // Add checklist container
+      let checklist = document.getElementById("scrape-checklist");
+      if (!checklist) {
+        checklist = document.createElement("div");
+        checklist.id = "scrape-checklist";
+        checklist.className = "scrape-checklist";
+        btn.parentElement.parentElement.insertBefore(checklist, btn.parentElement.nextSibling);
+      }
+      checklist.innerHTML = '<div style="color:var(--text-muted);padding:4px 0">Starting scrape...</div>';
 
       try {
         const res = await fetch("/api/scrape", { method: "POST" });
@@ -689,18 +1238,43 @@
         }
 
         const poll = setInterval(async () => {
-          const statusRes = await fetch("/api/scrape-status");
-          const { running } = await statusRes.json();
-          if (!running) {
-            clearInterval(poll);
-            btn.disabled = false;
-            btn.textContent = "Refresh Data";
-            loadData();
-          }
-        }, 3000);
+          try {
+            const [statusRes, progressRes] = await Promise.all([
+              fetch("/api/scrape-status"),
+              fetch("/api/scrape-progress"),
+            ]);
+            const { running } = await statusRes.json();
+            const progress = await progressRes.json();
+
+            if (progress.length > 0) {
+              checklist.innerHTML = progress.map(p => {
+                const icons = {
+                  pending: '<span class="icon">&#9675;</span>',
+                  running: '<span class="icon spinner">&#9681;</span>',
+                  done: '<span class="icon">&#10003;</span>',
+                  failed: '<span class="icon">&#10007;</span>',
+                };
+                const extra = p.status === "done" && p.datesScraped !== undefined
+                  ? ` <span style="color:var(--text-muted)">(${p.datesScraped} dates)</span>` : "";
+                const errText = p.status === "failed" && p.error
+                  ? ` <span style="color:#cf2e2e;font-size:11px">(failed)</span>` : "";
+                return `<div class="scrape-checklist-item check-${p.status}">${icons[p.status] || icons.pending} ${p.name}${extra}${errText}</div>`;
+              }).join("");
+            }
+
+            if (!running) {
+              clearInterval(poll);
+              btn.disabled = false;
+              btn.textContent = "Refresh Data";
+              setTimeout(() => { if (checklist) checklist.remove(); }, 5000);
+              loadData();
+            }
+          } catch {}
+        }, 2000);
       } catch (err) {
         btn.disabled = false;
         btn.textContent = "Refresh Data";
+        if (checklist) checklist.remove();
       }
     }
 
@@ -737,94 +1311,40 @@
       }
     }
 
-    function showHXModal() {
-      const overlay = document.createElement("div");
-      overlay.className = "modal-overlay";
-      overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
-
-      overlay.innerHTML = `
-        <div class="modal" style="max-width:600px">
-          <div class="modal-header">
-            <h2>Connect HX Rate Checker</h2>
-            <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
-          </div>
-          <div class="modal-body">
-            <div style="font-size:14px;line-height:1.8;color:var(--text-light)">
-              <p style="margin-bottom:16px;color:var(--gold);font-weight:700">Follow these 4 steps:</p>
-
-              <p><strong style="color:var(--blue-light)">Step 1:</strong> Open the rate checker in a new tab and log in with Google:</p>
-              <a href="https://rate-checker.internalapps.holidayextras.com" target="_blank"
-                style="display:block;color:var(--gold);margin:8px 0 16px;word-break:break-all">
-                rate-checker.internalapps.holidayextras.com</a>
-
-              <p><strong style="color:var(--blue-light)">Step 2:</strong> Once logged in and you see the rate checker page, open DevTools:</p>
-              <p style="margin:4px 0 16px;color:var(--gold);font-family:monospace;font-size:13px">
-                Mac: Cmd + Option + I &nbsp;&nbsp;|&nbsp;&nbsp; Windows: F12</p>
-
-              <p><strong style="color:var(--blue-light)">Step 3:</strong> In DevTools, click <strong>Application</strong> tab (top bar) &rarr;
-                <strong>Cookies</strong> (left sidebar) &rarr; click the rate-checker URL &rarr;
-                find the row named <strong style="color:var(--gold)">CF_AppSession</strong> &rarr;
-                double-click its <strong>Value</strong> and copy it (Cmd/Ctrl+C)</p>
-
-              <p style="margin-top:16px"><strong style="color:var(--blue-light)">Step 4:</strong> Paste the cookie value below:</p>
-              <div style="display:flex;gap:8px;margin-top:8px">
-                <input id="hx-cookie-input" type="text" placeholder="Paste CF_AppSession value here..."
-                  style="flex:1;padding:10px 12px;background:var(--navy-dark);border:1px solid var(--blue);color:#fff;font-family:monospace;font-size:13px">
-                <input id="hx-name-input" type="text" placeholder="Your name"
-                  style="width:120px;padding:10px 12px;background:var(--navy-dark);border:1px solid var(--blue);color:#fff;font-size:13px">
-              </div>
-              <button onclick="submitHXCookie()" class="scrape-btn"
-                style="margin-top:12px;width:100%;text-align:center">Save & Connect</button>
-              <p id="hx-save-msg" style="margin-top:8px;font-size:12px;display:none"></p>
-            </div>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(overlay);
-
-      const escHandler = (e) => {
-        if (e.key === "Escape") { overlay.remove(); document.removeEventListener("keydown", escHandler); }
-      };
-      document.addEventListener("keydown", escHandler);
-    }
-    window.showHXModal = showHXModal;
-
-    async function submitHXCookie() {
-      const input = document.getElementById("hx-cookie-input");
-      const nameInput = document.getElementById("hx-name-input");
-      const msg = document.getElementById("hx-save-msg");
-      const value = input.value.trim();
-      if (!value) {
-        msg.style.display = "block";
-        msg.style.color = "#cf2e2e";
-        msg.textContent = "Please paste the cookie value first.";
-        return;
-      }
+    async function showHXModal() {
+      const btn = document.getElementById("hx-btn");
+      btn.disabled = true;
+      btn.textContent = "Opening browser...";
+      btn.style.background = "var(--gold)";
+      btn.style.color = "#000";
 
       try {
-        const res = await fetch("/api/hx-cookies", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ cfAppSession: value, name: nameInput.value.trim() }),
-        });
+        const res = await fetch("/api/hx-login", { method: "POST" });
         const data = await res.json();
-        if (data.status === "saved") {
-          msg.style.display = "block";
-          msg.style.color = "var(--teal)";
-          msg.textContent = "Connected! You can close this and refresh data.";
-          checkHXStatus();
-          setTimeout(() => {
-            const overlay = document.querySelector(".modal-overlay");
-            if (overlay) overlay.remove();
-          }, 2000);
+        if (data.status === "already_running") {
+          btn.textContent = "Sign in in browser...";
+          return;
         }
+
+        btn.textContent = "Sign in in browser...";
+
+        // Poll until login is complete
+        const poll = setInterval(async () => {
+          const statusRes = await fetch("/api/hx-login-status");
+          const { running } = await statusRes.json();
+          if (!running) {
+            clearInterval(poll);
+            checkHXStatus();
+          }
+        }, 2000);
       } catch {
-        msg.style.display = "block";
-        msg.style.color = "#cf2e2e";
-        msg.textContent = "Failed to save. Please try again.";
+        btn.disabled = false;
+        btn.textContent = "Connect HX";
+        btn.style.background = "#cf2e2e";
+        btn.style.color = "#fff";
       }
     }
-    window.submitHXCookie = submitHXCookie;
+    window.showHXModal = showHXModal;
 
     async function loadData() {
       try {
@@ -893,8 +1413,9 @@
 
       // Fetch history
       try {
-        const res = await fetch("/api/date-history/" + dateStr);
-        const history = await res.json();
+        const history = window.__STATIC_MODE__
+          ? (window.__STATIC_DATA__.dateHistory[dateStr] || [])
+          : await fetch("/api/date-history/" + dateStr).then(r => r.json());
         renderModal(overlay.querySelector(".modal-body"), dateStr, history);
       } catch (err) {
         overlay.querySelector(".modal-body").innerHTML =
