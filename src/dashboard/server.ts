@@ -3,7 +3,6 @@ import path from "path";
 import fs from "fs";
 import { execSync } from "child_process";
 import os from "os";
-import { chromium } from "playwright";
 import { generateRecommendations } from "../recommendation/engine";
 import {
   getLatestScrapeTime,
@@ -98,68 +97,50 @@ export function createServer(): express.Express {
     });
   });
 
-  let hxLoginRunning = false;
-
-  app.post("/api/hx-login", async (_req, res) => {
-    if (hxLoginRunning) {
-      res.json({ status: "already_running" });
-      return;
-    }
-    hxLoginRunning = true;
-    res.json({ status: "started" });
-
-    const RATE_CHECKER_URL =
-      "https://rate-checker.internalapps.holidayextras.com/#/galaxyConnect/getProductAvailability?isTestEnvironment=false&supplierId=abe869be-e545-4e59-ab86-211e4f776642";
-
+  // Accept HX cookies from any team member (paste flow)
+  app.post("/api/hx-cookies", (req, res) => {
     try {
-      const browser = await chromium.launch({
-        headless: false,
-      });
-      const context = await browser.newContext({
-        viewport: { width: 1280, height: 800 },
-      });
-      const page = await context.newPage();
-      await page.goto(RATE_CHECKER_URL);
-
-      console.log("[HX Login] Browser opened — waiting for sign-in...");
-
-      // Wait for the rate checker form to load (means sign-in succeeded)
-      try {
-        await page.waitForSelector("#code", { timeout: 300000 });
-        console.log("[HX Login] Sign-in detected, saving cookies...");
-        await page.waitForTimeout(2000);
-      } catch {
-        console.log("[HX Login] Timed out waiting for sign-in.");
-        await browser.close();
-        hxLoginRunning = false;
+      const cookies = req.body.cookies;
+      if (!cookies || !Array.isArray(cookies) || cookies.length === 0) {
+        res.status(400).json({ error: "No cookies provided. Expected { cookies: [...] }" });
         return;
       }
 
-      // Grab all relevant cookies
-      const allCookies = await context.cookies();
-      const relevantCookies = allCookies.filter(
-        (c) =>
-          c.domain.includes("holidayextras") ||
-          c.domain.includes("cloudflareaccess") ||
-          c.domain.includes("cloudflare")
+      // Filter for relevant domains
+      const relevantCookies = cookies.filter(
+        (c: any) =>
+          c.domain?.includes("holidayextras") ||
+          c.domain?.includes("cloudflareaccess") ||
+          c.domain?.includes("cloudflare")
       );
 
+      if (relevantCookies.length === 0) {
+        res.status(400).json({ error: "No HX/Cloudflare cookies found in the provided data" });
+        return;
+      }
+
+      const dir = path.dirname(COOKIE_FILE);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(COOKIE_FILE, JSON.stringify(relevantCookies, null, 2));
       setSetting("hx_cookies_full", JSON.stringify(relevantCookies));
       hxSessionValid = true;
 
-      console.log(`[HX Login] Saved ${relevantCookies.length} cookies`);
-      await browser.close();
+      console.log(`[HX Cookies] Saved ${relevantCookies.length} cookies from team member`);
+      res.json({ status: "saved", cookieCount: relevantCookies.length });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error("[HX Login] Error:", msg);
-    } finally {
-      hxLoginRunning = false;
+      console.error("[HX Cookies] Error:", msg);
+      res.status(500).json({ error: msg });
     }
   });
 
-  app.get("/api/hx-login-status", (_req, res) => {
-    res.json({ running: hxLoginRunning });
+  // Bookmarklet source endpoint — returns JS the user can bookmark
+  app.get("/api/hx-bookmarklet", (req, res) => {
+    const host = req.headers.host || "localhost:3000";
+    const protocol = req.headers["x-forwarded-proto"] || "http";
+    const serverUrl = `${protocol}://${host}`;
+    const js = `javascript:void((function(){var c=document.cookie.split(';').map(function(s){var p=s.trim().split('=');return{name:p[0],value:p.slice(1).join('='),domain:location.hostname}});fetch('${serverUrl}/api/hx-cookies',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cookies:c})}).then(function(r){return r.json()}).then(function(d){alert('Cookies sent! '+d.cookieCount+' saved.')}).catch(function(e){alert('Error: '+e.message)})})())`;
+    res.type("text/plain").send(js);
   });
 
   app.get("/api/scrape-progress", (_req, res) => {

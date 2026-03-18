@@ -1311,38 +1311,34 @@
       }
     }
 
-    async function showHXModal() {
-      const btn = document.getElementById("hx-btn");
-      btn.disabled = true;
-      btn.textContent = "Opening browser...";
-      btn.style.background = "var(--gold)";
-      btn.style.color = "#000";
+    function showHXModal() {
+      // Create modal overlay
+      const overlay = document.createElement("div");
+      overlay.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center";
+      overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
 
-      try {
-        const res = await fetch("/api/hx-login", { method: "POST" });
-        const data = await res.json();
-        if (data.status === "already_running") {
-          btn.textContent = "Sign in in browser...";
-          return;
-        }
+      const rateCheckerUrl = "https://rate-checker.internalapps.holidayextras.com/#/galaxyConnect/getProductAvailability?isTestEnvironment=false&supplierId=abe869be-e545-4e59-ab86-211e4f776642";
 
-        btn.textContent = "Sign in in browser...";
-
-        // Poll until login is complete
-        const poll = setInterval(async () => {
-          const statusRes = await fetch("/api/hx-login-status");
-          const { running } = await statusRes.json();
-          if (!running) {
-            clearInterval(poll);
-            checkHXStatus();
-          }
-        }, 2000);
-      } catch {
-        btn.disabled = false;
-        btn.textContent = "Connect HX";
-        btn.style.background = "#cf2e2e";
-        btn.style.color = "#fff";
-      }
+      overlay.innerHTML = `
+        <div style="background:var(--navy);border:1px solid var(--gold);border-radius:12px;padding:30px;max-width:520px;width:90%;color:var(--text-main);font-family:Lora,serif">
+          <h3 style="color:var(--gold);margin-bottom:16px;font-family:'Cinzel Decorative',serif;font-size:18px">Connect HX Session</h3>
+          <p style="margin-bottom:12px;font-size:14px;line-height:1.6">Any team member with Cloudflare access can connect. Follow these steps:</p>
+          <ol style="margin:0 0 16px 20px;font-size:13px;line-height:2">
+            <li><a href="${rateCheckerUrl}" target="_blank" style="color:var(--blue-light)">Open the Rate Checker</a> and sign in with Google</li>
+            <li>Once signed in, open <strong>DevTools</strong> (F12) &rarr; <strong>Console</strong> tab</li>
+            <li>Paste this snippet and press Enter:</li>
+          </ol>
+          <div style="position:relative">
+            <pre id="hx-snippet" style="background:var(--navy-dark);border:1px solid var(--navy-mid);border-radius:6px;padding:12px;font-size:11px;overflow-x:auto;white-space:pre-wrap;word-break:break-all;color:var(--blue-light);cursor:pointer" onclick="navigator.clipboard.writeText(this.textContent);this.style.borderColor='var(--teal)';setTimeout(()=>this.style.borderColor='var(--navy-mid)',1500)">fetch('${location.origin}/api/hx-cookies',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cookies:document.cookie.split(';').map(s=>{const p=s.trim().split('=');return{name:p[0],value:p.slice(1).join('='),domain:location.hostname}})})}).then(r=>r.json()).then(d=>alert('Done! '+d.cookieCount+' cookies saved.')).catch(e=>alert('Error: '+e.message))</pre>
+            <span style="position:absolute;top:4px;right:8px;font-size:10px;color:var(--text-muted)">click to copy</span>
+          </div>
+          <p style="margin-top:16px;font-size:12px;color:var(--text-muted)">After running the snippet, close this modal and click <strong>Scrape Now</strong> to refresh data.</p>
+          <div style="text-align:right;margin-top:16px">
+            <button onclick="this.closest('div[style]').parentElement.remove()" style="background:var(--gold);color:var(--navy-dark);border:none;padding:8px 20px;border-radius:6px;cursor:pointer;font-weight:600">Close</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
     }
     window.showHXModal = showHXModal;
 

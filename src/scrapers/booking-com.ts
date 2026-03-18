@@ -1,10 +1,11 @@
-import { chromium } from "playwright";
+import { chromium, LaunchOptions } from "playwright";
 import { CompetitorScraper } from "../types";
 import { generateDateRange } from "./scraper-interface";
 
 const BASE_URL =
   "https://www.booking.com/attractions/gb/pryjfn92beny-tour-of-warner-bros-studio.en-gb.html";
 const CONCURRENCY = 5;
+const PROXY_CONCURRENCY = 2; // Lower concurrency when using proxy to conserve credits
 
 export const bookingComScraper: CompetitorScraper = {
   name: "Booking.com",
@@ -12,7 +13,20 @@ export const bookingComScraper: CompetitorScraper = {
   async scrape(startDate: Date, days: number) {
     const targetDates = generateDateRange(startDate, days);
     const results: { date: string; available: boolean }[] = [];
-    const browser = await chromium.launch({ headless: true });
+
+    const scraperApiKey = process.env.SCRAPERAPI_KEY;
+    const launchOpts: LaunchOptions = { headless: true };
+    if (scraperApiKey) {
+      launchOpts.proxy = {
+        server: "http://proxy-server.scraperapi.com:8001",
+        username: "scraperapi",
+        password: scraperApiKey,
+      };
+      console.log("[Booking.com] Using ScraperAPI proxy for IP rotation");
+    }
+    const concurrency = scraperApiKey ? PROXY_CONCURRENCY : CONCURRENCY;
+
+    const browser = await chromium.launch(launchOpts);
 
     try {
       const context = await browser.newContext({
@@ -34,8 +48,8 @@ export const bookingComScraper: CompetitorScraper = {
       await setupPage.close();
 
       // Check dates in batches
-      for (let i = 0; i < targetDates.length; i += CONCURRENCY) {
-        const batch = targetDates.slice(i, i + CONCURRENCY);
+      for (let i = 0; i < targetDates.length; i += concurrency) {
+        const batch = targetDates.slice(i, i + concurrency);
         const batchResults = await Promise.all(
           batch.map((dateStr) => checkDate(context, dateStr))
         );
