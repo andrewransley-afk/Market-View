@@ -1,11 +1,23 @@
 import { chromium } from "playwright";
+import path from "path";
+import fs from "fs";
 import { CompetitorScraper } from "../types";
 import { generateDateRange } from "./scraper-interface";
-import { getHXCookies, setHXSessionValid } from "../dashboard/server";
+import { setHXSessionValid } from "../dashboard/server";
 
 const WB_PRODUCT_CODE = "WBHXGC001";
 const AVAILABILITY_URL =
   "https://rate-checker.internalapps.holidayextras.com/#/galaxyConnect/getProductAvailability?isTestEnvironment=false&supplierId=abe869be-e545-4e59-ab86-211e4f776642";
+const COOKIE_FILE = path.join(process.cwd(), "data", "hx-cookies.json");
+
+function loadCookies(): any[] | null {
+  try {
+    if (!fs.existsSync(COOKIE_FILE)) return null;
+    return JSON.parse(fs.readFileSync(COOKIE_FILE, "utf-8"));
+  } catch {
+    return null;
+  }
+}
 
 export const wbDirectScraper: CompetitorScraper = {
   name: "WB Studio Tour Direct",
@@ -13,34 +25,23 @@ export const wbDirectScraper: CompetitorScraper = {
   async scrape(startDate: Date, days: number) {
     const results: { date: string; available: boolean; tickets?: number }[] = [];
 
-    const cookies = await getHXCookies();
+    const cookies = loadCookies();
     if (!cookies) {
-      console.log("[WB Direct] No HX cookies. Click 'Connect HX' on the dashboard.");
+      console.log("[WB Direct] No HX cookies. Run: npm run hx-login");
       return results;
     }
 
     const targetDates = new Set(generateDateRange(startDate, days));
 
     const browser = await chromium.launch({ headless: true });
+    const context = await browser.newContext({
+      viewport: { width: 1280, height: 800 },
+    });
+
+    // Inject all saved cookies
+    await context.addCookies(cookies);
 
     try {
-      const context = await browser.newContext({
-        viewport: { width: 1280, height: 800 },
-      });
-
-      // Inject Cloudflare Access cookie
-      await context.addCookies([
-        {
-          name: "CF_AppSession",
-          value: cookies.cfAppSession,
-          domain: "rate-checker.internalapps.holidayextras.com",
-          path: "/",
-          httpOnly: true,
-          secure: true,
-          sameSite: "None",
-        },
-      ]);
-
       const page = await context.newPage();
 
       console.log("[WB Direct] Loading HX rate checker...");
@@ -60,7 +61,7 @@ export const wbDirectScraper: CompetitorScraper = {
       });
 
       if (isLoginPage) {
-        console.log("[WB Direct] HX session expired. Reconnect via dashboard.");
+        console.log("[WB Direct] HX session expired. Run: npm run hx-login");
         setHXSessionValid(false);
         return results;
       }

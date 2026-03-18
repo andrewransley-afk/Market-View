@@ -4,6 +4,7 @@ dotenv.config();
 import { initDatabase } from "./db/schema";
 import { startServer } from "./dashboard/server";
 import { startScheduler, runDailyJob } from "./scheduler/daily-job";
+import { fetchYieldRates } from "./scrapers/yield-sheet";
 
 async function main(): Promise<void> {
   console.log("=================================");
@@ -12,16 +13,19 @@ async function main(): Promise<void> {
 
   // 1. Initialize database
   console.log("[Init] Initializing database...");
-  await initDatabase();
+  initDatabase();
   console.log("[Init] Database ready");
 
-  // 2. Start dashboard server
+  // 2. Fetch yield rates from Google Sheet
+  fetchYieldRates().catch(e => console.error("[Init] Yield sheet fetch failed:", e));
+
+  // 3. Start dashboard server
   startServer();
 
-  // 3. Start scheduler
+  // 4. Start scheduler
   startScheduler();
 
-  // 4. Check for --run-now flag (manual scrape)
+  // 5. Check for --run-now flag (manual scrape)
   if (process.argv.includes("--run-now")) {
     console.log("\n[Init] --run-now flag detected, triggering scrape...\n");
     await runDailyJob();

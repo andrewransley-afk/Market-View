@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import { runAllScrapers } from "../scrapers/run-all";
+import { runAllScrapers, getScrapeProgress } from "../scrapers/run-all";
 import { fetchHXAllocation } from "../api/hx-rate-checker";
 import { generateRecommendations } from "../recommendation/engine";
 import { sendDailyAlert } from "../email/alert-sender";
@@ -20,18 +20,19 @@ export async function runDailyJob(): Promise<void> {
 
     // 2. Fetch HX allocation
     console.log("[Job] Step 2/4: Fetching HX allocation...");
+    const hxProg = getScrapeProgress().find(p => p.name === "HX Allocation");
+    if (hxProg) hxProg.status = "running";
     const allocations = await fetchHXAllocation(90);
+    if (hxProg) {
+      hxProg.status = allocations.length > 0 ? "done" : "failed";
+      hxProg.datesScraped = allocations.length;
+    }
     console.log(`[Job] HX allocation: ${allocations.length} records`);
 
     // 3. Generate recommendations
     console.log("[Job] Step 3/4: Generating recommendations...");
     const recommendations = generateRecommendations(90);
-    const raiseCount = recommendations.filter(
-      (r) => r.recommendation === "raise"
-    ).length;
-    console.log(
-      `[Job] Recommendations: ${raiseCount} dates flagged for price raise`
-    );
+    console.log(`[Job] Recommendations: ${recommendations.length} dates analysed`);
 
     // 4. Send email alert
     console.log("[Job] Step 4/4: Sending email alert...");

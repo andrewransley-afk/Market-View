@@ -1,19 +1,31 @@
 import { chromium } from "playwright";
+import path from "path";
+import fs from "fs";
 import { HXAllocation } from "../types";
-import { upsertHXAllocation, recordStockSnapshot } from "../db/queries";
+import { upsertHXAllocation, recordStockSnapshot, clearStaleHXSlots } from "../db/queries";
 import { generateDateRange } from "../scrapers/scraper-interface";
-import { getHXCookies, setHXSessionValid } from "../dashboard/server";
+import { setHXSessionValid } from "../dashboard/server";
 
 const PRODUCT_CODE = "API-WBC000310";
 const BASE_URL = "https://rate-checker.internalapps.holidayextras.com";
 const AVAILABILITY_URL = `${BASE_URL}/#/galaxyConnect/getProductAvailability?isTestEnvironment=false&supplierId=abe869be-e545-4e59-ab86-211e4f776642`;
+const COOKIE_FILE = path.join(process.cwd(), "data", "hx-cookies.json");
+
+function loadCookies(): any[] | null {
+  try {
+    if (!fs.existsSync(COOKIE_FILE)) return null;
+    return JSON.parse(fs.readFileSync(COOKIE_FILE, "utf-8"));
+  } catch {
+    return null;
+  }
+}
 
 export async function fetchHXAllocation(
   days: number = 90
 ): Promise<HXAllocation[]> {
-  const cookies = await getHXCookies();
+  const cookies = loadCookies();
   if (!cookies) {
-    console.log("[HX] No cookies saved. Click 'Connect HX' on the dashboard.");
+    console.log("[HX] No cookies. Run: npm run hx-login");
     return [];
   }
 
@@ -21,25 +33,14 @@ export async function fetchHXAllocation(
   const allocations: HXAllocation[] = [];
 
   const browser = await chromium.launch({ headless: true });
+  const context = await browser.newContext({
+    viewport: { width: 1280, height: 800 },
+  });
+
+  // Inject all saved cookies
+  await context.addCookies(cookies);
 
   try {
-    const context = await browser.newContext({
-      viewport: { width: 1280, height: 800 },
-    });
-
-    // Inject the Cloudflare Access cookies
-    await context.addCookies([
-      {
-        name: "CF_AppSession",
-        value: cookies.cfAppSession,
-        domain: "rate-checker.internalapps.holidayextras.com",
-        path: "/",
-        httpOnly: true,
-        secure: true,
-        sameSite: "None",
-      },
-    ]);
-
     const page = await context.newPage();
 
     console.log("[HX] Loading rate checker (getProductAvailability)...");
@@ -59,7 +60,7 @@ export async function fetchHXAllocation(
     });
 
     if (isLoginPage) {
-      console.log("[HX] Session expired. Someone needs to reconnect HX on the dashboard.");
+      console.log("[HX] Session expired. Run: npm run hx-login");
       setHXSessionValid(false);
       return [];
     }
@@ -187,16 +188,25 @@ export async function fetchHXAllocation(
 
     // Store in database
     const hxDailyTickets = new Map<string, number>();
+    const slotsByDate = new Map<string, string[]>();
     for (const alloc of allocations) {
-      await upsertHXAllocation(alloc.date, alloc.timeSlot, alloc.ticketsAvailable);
+      upsertHXAllocation(alloc.date, alloc.timeSlot, alloc.ticketsAvailable);
       hxDailyTickets.set(
         alloc.date,
         (hxDailyTickets.get(alloc.date) || 0) + alloc.ticketsAvailable
       );
+      const slots = slotsByDate.get(alloc.date) || [];
+      slots.push(alloc.timeSlot);
+      slotsByDate.set(alloc.date, slots);
+    }
+
+    // Remove stale time slots that weren't in this scrape
+    for (const [date, slots] of slotsByDate) {
+      clearStaleHXSlots(date, slots);
     }
 
     for (const [date, tickets] of hxDailyTickets) {
-      await recordStockSnapshot(date, "hx", tickets);
+      recordStockSnapshot(date, "hx", tickets);
     }
 
     console.log(`[HX] ${allocations.length} allocation records stored`);

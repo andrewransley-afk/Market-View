@@ -1,7 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(curl:*)",
+      "WebFetch(domain:docs.google.com)",
+      "WebFetch(domain:doc-0k-1o-sheets.googleusercontent.com)",
+      "Bash(lsof:*)",
+      "Bash(kill 6570:*)",
+      "Bash(git remote:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git fetch:*)",
+      "Bash(gh api:*)",
+      "Bash(gh repo:*)",
+      "WebFetch(domain:www.booking.com)",
+      "WebFetch(domain:cf.bstatic.com)"
     ]
   }
 }

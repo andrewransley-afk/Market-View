@@ -21,13 +21,34 @@ export interface ScrapeReport {
   error?: string;
 }
 
+export interface ScrapeProgress {
+  name: string;
+  status: "pending" | "running" | "done" | "failed";
+  datesScraped?: number;
+  error?: string;
+}
+
+let currentProgress: ScrapeProgress[] = [];
+
+export function getScrapeProgress(): ScrapeProgress[] {
+  return currentProgress;
+}
+
 export async function runAllScrapers(
   days: number = 60
 ): Promise<ScrapeReport[]> {
   const startDate = new Date();
   const reports: ScrapeReport[] = [];
 
+  // Initialize progress for all scrapers + HX
+  currentProgress = [
+    ...ALL_SCRAPERS.map(s => ({ name: s.name, status: "pending" as const })),
+    { name: "HX Allocation", status: "pending" as const },
+  ];
+
   for (const scraper of ALL_SCRAPERS) {
+    const prog = currentProgress.find(p => p.name === scraper.name)!;
+    prog.status = "running";
     console.log(`[Scraper] Starting: ${scraper.name}`);
     const startTime = Date.now();
 
@@ -38,7 +59,7 @@ export async function runAllScrapers(
       const wbDailyTickets = new Map<string, number>();
 
       for (const result of results) {
-        await upsertCompetitorAvailability(
+        upsertCompetitorAvailability(
           scraper.name,
           result.date,
           result.available,
@@ -55,7 +76,7 @@ export async function runAllScrapers(
       }
 
       for (const [date, tickets] of wbDailyTickets) {
-        await recordStockSnapshot(date, "wb", tickets);
+        recordStockSnapshot(date, "wb", tickets);
       }
 
       // Record competitor availability snapshots (1=available, 0=sold out)
@@ -68,7 +89,7 @@ export async function runAllScrapers(
         }[scraper.name];
         if (shortName) {
           for (const result of results) {
-            await recordStockSnapshot(result.date, shortName, result.available ? 1 : 0);
+            recordStockSnapshot(result.date, shortName, result.available ? 1 : 0);
           }
         }
       }
@@ -78,6 +99,9 @@ export async function runAllScrapers(
         `[Scraper] ${scraper.name}: ${results.length} dates scraped in ${elapsed}s`
       );
 
+      prog.status = "done";
+      prog.datesScraped = results.length;
+
       reports.push({
         competitor: scraper.name,
         success: true,
@@ -86,6 +110,9 @@ export async function runAllScrapers(
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error(`[Scraper] ${scraper.name} FAILED: ${message}`);
+
+      prog.status = "failed";
+      prog.error = message;
 
       reports.push({
         competitor: scraper.name,
