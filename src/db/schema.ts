@@ -1,4 +1,4 @@
-import Database from "better-sqlite3";
+import Database from "libsql";
 import path from "path";
 import fs from "fs";
 
@@ -7,14 +7,24 @@ let db: Database.Database;
 export function getDatabase(): Database.Database {
   if (db) return db;
 
-  const dbPath = process.env.DATABASE_PATH || "./data/market-view.db";
-  const dir = path.dirname(dbPath);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+  const tursoUrl = process.env.TURSO_URL?.trim();
+  const tursoToken = process.env.TURSO_AUTH_TOKEN?.trim();
+
+  if (tursoUrl && tursoToken) {
+    // Remote Turso database
+    console.log("[DB] Connecting to Turso:", tursoUrl);
+    db = new Database(tursoUrl, { authToken: tursoToken } as any);
+  } else {
+    // Local SQLite file
+    const dbPath = process.env.DATABASE_PATH || "./data/market-view.db";
+    const dir = path.dirname(dbPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    db = new Database(dbPath);
+    db.pragma("journal_mode = WAL");
   }
 
-  db = new Database(dbPath);
-  db.pragma("journal_mode = WAL");
   return db;
 }
 

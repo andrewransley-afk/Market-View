@@ -1,6 +1,6 @@
 FROM node:20-slim
 
-# Install Playwright dependencies + better-sqlite3 build tools
+# Install Playwright dependencies + native module build tools
 RUN apt-get update && apt-get install -y \
     python3 make g++ \
     libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 \
