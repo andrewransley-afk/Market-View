@@ -19,10 +19,10 @@ export const bookingComScraper: CompetitorScraper = {
     if (scraperApiKey) {
       launchOpts.proxy = {
         server: "http://proxy-server.scraperapi.com:8001",
-        username: "scraperapi",
+        username: "scraperapi.country_code=gb.premium=true",
         password: scraperApiKey,
       };
-      console.log("[Booking.com] Using ScraperAPI proxy for IP rotation");
+      console.log("[Booking.com] Using ScraperAPI premium proxy for IP rotation");
     }
     const concurrency = scraperApiKey ? PROXY_CONCURRENCY : CONCURRENCY;
 
