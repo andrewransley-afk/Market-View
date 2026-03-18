@@ -1316,30 +1316,26 @@
       overlay.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center";
       overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
 
-      const rateCheckerUrl = "https://rate-checker.internalapps.holidayextras.com/#/galaxyConnect/getProductAvailability?isTestEnvironment=false&supplierId=abe869be-e545-4e59-ab86-211e4f776642";
-
-      // Build bookmarklet JS with current server origin baked in
-      const bmJs = `javascript:void((function(){var c=document.cookie.split(';').map(function(s){var p=s.trim().split('=');return{name:p[0],value:p.slice(1).join('='),domain:location.hostname}});fetch('${location.origin}/api/hx-cookies',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cookies:c})}).then(function(r){return r.json()}).then(function(d){alert('Done! '+d.cookieCount+' cookies saved to Market View.')}).catch(function(e){alert('Error: '+e.message)})})())`;
-
       overlay.innerHTML = `
         <div style="background:var(--navy);border:1px solid var(--gold);border-radius:12px;padding:30px;max-width:520px;width:90%;color:var(--text-main);font-family:Lora,serif">
           <h3 style="color:var(--gold);margin-bottom:16px;font-family:'Cinzel Decorative',serif;font-size:18px">Connect HX Session</h3>
-          <p style="margin-bottom:14px;font-size:14px;line-height:1.6">Any team member with Cloudflare access can connect.</p>
+          <p style="margin-bottom:14px;font-size:14px;line-height:1.6">Any team member with Cloudflare access can connect using the Chrome extension.</p>
 
           <div style="background:var(--navy-dark);border:1px solid var(--navy-mid);border-radius:8px;padding:16px;margin-bottom:16px">
             <div style="font-size:12px;color:var(--gold);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">One-time setup</div>
-            <p style="font-size:13px;line-height:1.6;margin-bottom:10px">Drag this button to your <strong>bookmarks bar</strong>:</p>
-            <div style="text-align:center">
-              <a href="${bmJs}" style="display:inline-block;background:var(--gold);color:var(--navy-dark);padding:10px 20px;border-radius:6px;font-weight:700;font-size:13px;text-decoration:none;cursor:grab" onclick="event.preventDefault();alert('Drag this to your bookmarks bar — don\\'t click it here!')">&#x1F4E4; Send HX Cookies</a>
-            </div>
+            <ol style="margin:0 0 0 20px;font-size:13px;line-height:2">
+              <li>Open <strong>chrome://extensions</strong> in Chrome</li>
+              <li>Enable <strong>Developer mode</strong> (top right toggle)</li>
+              <li>Click <strong>"Load unpacked"</strong> and select the <code>chrome-extension</code> folder from the Market View repo</li>
+            </ol>
           </div>
 
           <div style="background:var(--navy-dark);border:1px solid var(--navy-mid);border-radius:8px;padding:16px">
             <div style="font-size:12px;color:var(--gold);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">Each time you need to refresh</div>
             <ol style="margin:0 0 0 20px;font-size:13px;line-height:2.2">
-              <li><a href="${rateCheckerUrl}" target="_blank" style="color:var(--blue-light)">Open the Rate Checker</a> and sign in with Google</li>
-              <li>Once signed in, click the <strong>"Send HX Cookies"</strong> bookmark</li>
-              <li>You'll see a confirmation alert — done!</li>
+              <li>Open the Rate Checker and sign in with Google</li>
+              <li>Click the <strong>Market View extension icon</strong> in your toolbar</li>
+              <li>Click <strong>"Send HX Cookies"</strong> — done!</li>
             </ol>
           </div>
 

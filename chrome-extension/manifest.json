@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Market View - HX Cookie Sync",
+  "version": "1.0",
+  "description": "Send HX Rate Checker cookies to Market View dashboard",
+  "permissions": ["cookies", "storage"],
+  "host_permissions": [
+    "*://*.holidayextras.com/*",
+    "*://*.cloudflareaccess.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  }
+}
