@@ -97,8 +97,17 @@ export function createServer(): express.Express {
     });
   });
 
-  // Accept HX cookies from any team member (paste flow)
+  // CORS preflight for bookmarklet (runs from rate-checker domain)
+  app.options("/api/hx-cookies", (_req, res) => {
+    res.set("Access-Control-Allow-Origin", "*");
+    res.set("Access-Control-Allow-Methods", "POST");
+    res.set("Access-Control-Allow-Headers", "Content-Type");
+    res.sendStatus(204);
+  });
+
+  // Accept HX cookies from any team member (bookmarklet or paste)
   app.post("/api/hx-cookies", (req, res) => {
+    res.set("Access-Control-Allow-Origin", "*");
     try {
       const cookies = req.body.cookies;
       if (!cookies || !Array.isArray(cookies) || cookies.length === 0) {
@@ -134,14 +143,7 @@ export function createServer(): express.Express {
     }
   });
 
-  // Bookmarklet source endpoint — returns JS the user can bookmark
-  app.get("/api/hx-bookmarklet", (req, res) => {
-    const host = req.headers.host || "localhost:3000";
-    const protocol = req.headers["x-forwarded-proto"] || "http";
-    const serverUrl = `${protocol}://${host}`;
-    const js = `javascript:void((function(){var c=document.cookie.split(';').map(function(s){var p=s.trim().split('=');return{name:p[0],value:p.slice(1).join('='),domain:location.hostname}});fetch('${serverUrl}/api/hx-cookies',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cookies:c})}).then(function(r){return r.json()}).then(function(d){alert('Cookies sent! '+d.cookieCount+' saved.')}).catch(function(e){alert('Error: '+e.message)})})())`;
-    res.type("text/plain").send(js);
-  });
+
 
   app.get("/api/scrape-progress", (_req, res) => {
     res.json(getScrapeProgress());
