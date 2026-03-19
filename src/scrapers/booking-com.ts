@@ -38,7 +38,7 @@ async function scrapeViaApi(
       batch.map(async (dateStr) => {
         try {
           const targetUrl = `${BASE_URL}?date=${dateStr}`;
-          const apiUrl = `http://api.scraperapi.com/?api_key=${apiKey}&url=${encodeURIComponent(targetUrl)}&render=true&country_code=gb&premium=true`;
+          const apiUrl = `http://api.scraperapi.com/?api_key=${apiKey}&url=${encodeURIComponent(targetUrl)}&render=true&country_code=gb`;
 
           const res = await fetch(apiUrl, { signal: AbortSignal.timeout(30000) });
           if (!res.ok) {
