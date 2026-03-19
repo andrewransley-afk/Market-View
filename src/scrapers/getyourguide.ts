@@ -4,7 +4,7 @@ import { generateDateRange } from "./scraper-interface";
 // Location page for WB Studio Tour London — filter by date to check availability
 const LOCATION_URL =
   "https://www.getyourguide.com/en-gb/warner-bros-studio-london-l4745/";
-const API_CONCURRENCY = 3;
+const API_CONCURRENCY = 1; // Sequential to limit memory on Render free tier
 
 export const getYourGuideScraper: CompetitorScraper = {
   name: "GetYourGuide",

@@ -5,7 +5,7 @@ import { generateDateRange } from "./scraper-interface";
 const BASE_URL =
   "https://www.booking.com/attractions/gb/pryjfn92beny-tour-of-warner-bros-studio.en-gb.html";
 const CONCURRENCY = 5;
-const API_CONCURRENCY = 3; // ScraperAPI concurrent requests
+const API_CONCURRENCY = 1; // Sequential to limit memory on Render free tier
 
 export const bookingComScraper: CompetitorScraper = {
   name: "Booking.com",

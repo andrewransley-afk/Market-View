@@ -11,7 +11,7 @@ export async function runDailyJob(): Promise<void> {
   try {
     // 1. Run all competitor scrapers
     console.log("[Job] Step 1/4: Scraping competitors...");
-    const reports = await runAllScrapers(90);
+    const reports = await runAllScrapers(30);
     const successful = reports.filter((r) => r.success).length;
     const failed = reports.filter((r) => !r.success).length;
     console.log(
@@ -22,7 +22,7 @@ export async function runDailyJob(): Promise<void> {
     console.log("[Job] Step 2/4: Fetching HX allocation...");
     const hxProg = getScrapeProgress().find(p => p.name === "HX Allocation");
     if (hxProg) hxProg.status = "running";
-    const allocations = await fetchHXAllocation(90);
+    const allocations = await fetchHXAllocation(30);
     if (hxProg) {
       hxProg.status = allocations.length > 0 ? "done" : "failed";
       hxProg.datesScraped = allocations.length;
@@ -31,7 +31,7 @@ export async function runDailyJob(): Promise<void> {
 
     // 3. Generate recommendations
     console.log("[Job] Step 3/4: Generating recommendations...");
-    const recommendations = generateRecommendations(90);
+    const recommendations = generateRecommendations(30);
     console.log(`[Job] Recommendations: ${recommendations.length} dates analysed`);
 
     // 4. Send email alert
