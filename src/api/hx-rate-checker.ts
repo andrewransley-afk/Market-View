@@ -1,4 +1,3 @@
-import { chromium } from "playwright";
 import path from "path";
 import fs from "fs";
 import { HXAllocation } from "../types";
@@ -32,6 +31,7 @@ export async function fetchHXAllocation(
   const targetDates = new Set(generateDateRange(new Date(), days));
   const allocations: HXAllocation[] = [];
 
+  const { chromium } = await import("playwright");
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
     viewport: { width: 1280, height: 800 },
