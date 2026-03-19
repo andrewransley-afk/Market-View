@@ -1,4 +1,3 @@
-import { chromium } from "playwright";
 import path from "path";
 import fs from "fs";
 import { CompetitorScraper } from "../types";
@@ -33,6 +32,7 @@ export const wbDirectScraper: CompetitorScraper = {
 
     const targetDates = new Set(generateDateRange(startDate, days));
 
+    const { chromium } = await import("playwright");
     const browser = await chromium.launch({
       headless: true,
       args: ["--disable-dev-shm-usage", "--no-sandbox"],
