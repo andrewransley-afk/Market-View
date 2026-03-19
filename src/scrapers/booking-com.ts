@@ -24,6 +24,8 @@ export const bookingComScraper: CompetitorScraper = {
         console.log(`[Booking.com] ${dateStr}: ERROR - ${msg.slice(0, 80)}`);
         results.push({ date: dateStr, available: false });
       }
+      // Yield to event loop so Express can serve progress requests
+      await new Promise(r => setTimeout(r, 100));
     }
 
     return results;
