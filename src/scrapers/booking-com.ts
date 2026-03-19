@@ -25,7 +25,7 @@ export const bookingComScraper: CompetitorScraper = {
         results.push({ date: dateStr, available: false });
       }
       // Yield to event loop so Express can serve progress requests
-      await new Promise(r => setTimeout(r, 100));
+      await new Promise(r => setTimeout(r, 500));
     }
 
     return results;

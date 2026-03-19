@@ -1257,8 +1257,8 @@
           }
         } catch {
           pollFailures++;
-          // Keep trying — server may be busy with scrape
-          if (pollFailures > 60) {
+          // Keep trying — server may be busy with scrape (Booking.com takes ~10min)
+          if (pollFailures > 200) {
             clearInterval(poll);
             btn.disabled = false;
             btn.textContent = "Refresh Data";
