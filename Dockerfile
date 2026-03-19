@@ -9,8 +9,7 @@ WORKDIR /app
 
 # Copy package files and install
 COPY package.json package-lock.json* ./
-ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-RUN npm install
+RUN npm install --omit=dev
 
 # Copy source
 COPY . .
