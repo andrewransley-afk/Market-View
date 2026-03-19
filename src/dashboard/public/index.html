@@ -1231,51 +1231,59 @@
       checklist.innerHTML = '<div style="color:var(--text-muted);padding:4px 0">Starting scrape...</div>';
 
       try {
-        const res = await fetch("/api/scrape", { method: "POST" });
+        const res = await fetch("/api/scrape", { method: "POST", signal: AbortSignal.timeout(10000) });
         const data = await res.json();
         if (data.status === "already_running") {
           btn.textContent = "Already Running...";
         }
+      } catch (err) {
+        // Scrape may have started even if the response failed — continue polling
+        console.log("[Scrape] POST may have failed, polling anyway:", err);
+      }
 
-        const poll = setInterval(async () => {
-          try {
-            const [statusRes, progressRes] = await Promise.all([
-              fetch("/api/scrape-status"),
-              fetch("/api/scrape-progress"),
-            ]);
-            const { running } = await statusRes.json();
-            const progress = await progressRes.json();
+      // Always poll for progress regardless of POST result
+      let pollFailures = 0;
+      const poll = setInterval(async () => {
+        try {
+          const progressRes = await fetch("/api/scrape-progress", { signal: AbortSignal.timeout(8000) });
+          const progress = await progressRes.json();
 
-            if (progress.length > 0) {
-              checklist.innerHTML = progress.map(p => {
-                const icons = {
-                  pending: '<span class="icon">&#9675;</span>',
-                  running: '<span class="icon spinner">&#9681;</span>',
-                  done: '<span class="icon">&#10003;</span>',
-                  failed: '<span class="icon">&#10007;</span>',
-                };
-                const extra = p.status === "done" && p.datesScraped !== undefined
-                  ? ` <span style="color:var(--text-muted)">(${p.datesScraped} dates)</span>` : "";
-                const errText = p.status === "failed" && p.error
-                  ? ` <span style="color:#cf2e2e;font-size:11px">(failed)</span>` : "";
-                return `<div class="scrape-checklist-item check-${p.status}">${icons[p.status] || icons.pending} ${p.name}${extra}${errText}</div>`;
-              }).join("");
-            }
+          if (progress.length > 0) {
+            pollFailures = 0;
+            checklist.innerHTML = progress.map(p => {
+              const icons = {
+                pending: '<span class="icon">&#9675;</span>',
+                running: '<span class="icon spinner">&#9681;</span>',
+                done: '<span class="icon">&#10003;</span>',
+                failed: '<span class="icon">&#10007;</span>',
+              };
+              const extra = p.status === "done" && p.datesScraped !== undefined
+                ? ` <span style="color:var(--text-muted)">(${p.datesScraped} dates)</span>` : "";
+              const errText = p.status === "failed" && p.error
+                ? ` <span style="color:#cf2e2e;font-size:11px">(failed)</span>` : "";
+              return `<div class="scrape-checklist-item check-${p.status}">${icons[p.status] || icons.pending} ${p.name}${extra}${errText}</div>`;
+            }).join("");
 
-            if (!running) {
+            const allDone = progress.every(p => p.status === "done" || p.status === "failed");
+            if (allDone) {
               clearInterval(poll);
               btn.disabled = false;
               btn.textContent = "Refresh Data";
               setTimeout(() => { if (checklist) checklist.remove(); }, 5000);
               loadData();
             }
-          } catch {}
-        }, 2000);
-      } catch (err) {
-        btn.disabled = false;
-        btn.textContent = "Refresh Data";
-        if (checklist) checklist.remove();
-      }
+          }
+        } catch {
+          pollFailures++;
+          // Keep trying — server may be busy with scrape
+          if (pollFailures > 60) {
+            clearInterval(poll);
+            btn.disabled = false;
+            btn.textContent = "Refresh Data";
+            checklist.innerHTML = '<div style="color:#cf2e2e;padding:4px 0">Lost connection to server</div>';
+          }
+        }
+      }, 3000);
     }
 
     window.triggerScrape = triggerScrape;
