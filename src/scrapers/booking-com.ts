@@ -11,20 +11,11 @@ export const bookingComScraper: CompetitorScraper = {
 
   async scrape(startDate: Date, days: number) {
     const targetDates = generateDateRange(startDate, days);
-    const scraperApiKey = process.env.SCRAPERAPI_KEY;
     const results: { date: string; available: boolean }[] = [];
 
     for (const dateStr of targetDates) {
       try {
-        const targetUrl = `${BASE_URL}?date=${dateStr}`;
-        let url: string;
-
-        if (scraperApiKey) {
-          url = `http://api.scraperapi.com/?api_key=${scraperApiKey}&url=${encodeURIComponent(targetUrl)}&render=true&country_code=gb`;
-        } else {
-          url = targetUrl;
-        }
-
+        const url = `${BASE_URL}?date=${dateStr}`;
         const available = await streamCheckKeywords(url, KEYWORDS);
         console.log(`[Booking.com] ${dateStr}: ${available ? "AVAILABLE" : "SOLD OUT"}`);
         results.push({ date: dateStr, available });
@@ -41,12 +32,19 @@ export const bookingComScraper: CompetitorScraper = {
 
 /** Stream response body in chunks, checking for keywords without buffering the full HTML */
 async function streamCheckKeywords(url: string, keywords: string[]): Promise<boolean> {
-  const res = await fetch(url, { signal: AbortSignal.timeout(45000) });
+  const res = await fetch(url, {
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+      "Accept-Language": "en-GB,en;q=0.9",
+    },
+    signal: AbortSignal.timeout(20000),
+  });
   if (!res.ok || !res.body) return false;
 
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
-  let overlap = ""; // carry-over from previous chunk for keywords spanning chunk boundaries
+  let overlap = "";
 
   try {
     while (true) {
@@ -62,7 +60,6 @@ async function streamCheckKeywords(url: string, keywords: string[]): Promise<boo
         }
       }
 
-      // Keep last N chars to catch keywords split across chunks
       overlap = chunk.slice(-50);
     }
   } finally {

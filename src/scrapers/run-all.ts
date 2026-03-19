@@ -4,14 +4,11 @@ import { goldenToursScraper } from "./golden-tours";
 import { wbDirectScraper } from "./wb-direct";
 import { bookingComScraper } from "./booking-com";
 import { premiumToursScraper } from "./premium-tours";
-import { getYourGuideScraper } from "./getyourguide";
-
 const ALL_SCRAPERS: CompetitorScraper[] = [
   wbDirectScraper,
   goldenToursScraper,
   bookingComScraper,
   premiumToursScraper,
-  getYourGuideScraper,
 ];
 
 export interface ScrapeReport {
