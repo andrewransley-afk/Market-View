@@ -33,7 +33,10 @@ export const wbDirectScraper: CompetitorScraper = {
 
     const targetDates = new Set(generateDateRange(startDate, days));
 
-    const browser = await chromium.launch({ headless: true });
+    const browser = await chromium.launch({
+      headless: true,
+      args: ["--disable-dev-shm-usage", "--no-sandbox"],
+    });
     const context = await browser.newContext({
       viewport: { width: 1280, height: 800 },
     });
