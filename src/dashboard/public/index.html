@@ -824,9 +824,8 @@
           <div class="last-updated">${updatedText}</div>
           <div style="display:flex;gap:12px;justify-content:center;align-items:center;margin-top:18px">
             <button class="scrape-btn" id="scrape-btn" onclick="triggerScrape()">Refresh Data</button>
-            <button class="scrape-btn" id="hx-btn" style="background:var(--text-muted);color:var(--navy);font-size:11px;padding:10px 20px" onclick="showHXModal()">Checking HX...</button>
+            <button class="scrape-btn" id="hx-btn" style="background:var(--text-muted);color:var(--navy);font-size:11px;padding:10px 20px" onclick="showHXModal()">HX Not Linked</button>
             <button class="scrape-btn" style="background:var(--blue);font-size:11px;padding:10px 20px" onclick="downloadPDF()">Download PDF</button>
-            <button class="scrape-btn" id="publish-btn" style="background:var(--teal);color:#000;font-size:11px;padding:10px 20px" onclick="publishSnapshot()">Publish</button>
           </div>
         </div>
 
@@ -1182,23 +1181,6 @@
     }
     window.showPriceImpact = showPriceImpact;
 
-    async function publishSnapshot() {
-      const btn = document.getElementById("publish-btn");
-      btn.disabled = true;
-      btn.textContent = "Publishing...";
-      try {
-        const res = await fetch("/api/publish", { method: "POST" });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        alert("Published! View at:\\n" + data.url);
-      } catch (err) {
-        alert("Publish failed: " + err.message);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = "Publish";
-      }
-    }
-
     function downloadPDF() {
       const today = new Date().toISOString().split("T")[0];
       const element = document.getElementById("app");
@@ -1304,18 +1286,15 @@
       if (data.connected && data.valid) {
         btn.style.background = "var(--teal)";
         btn.style.color = "#000";
-        btn.textContent = "HX Connected";
-        btn.disabled = false;
+        btn.textContent = "HX Linked \u2713";
       } else if (data.connected && !data.valid) {
         btn.style.background = "#ff6900";
         btn.style.color = "#000";
-        btn.textContent = "HX Expired - Reconnect";
-        btn.disabled = false;
+        btn.textContent = "HX Session Expired";
       } else {
-        btn.style.background = "#cf2e2e";
-        btn.style.color = "#fff";
-        btn.textContent = "Connect HX";
-        btn.disabled = false;
+        btn.style.background = "var(--text-muted)";
+        btn.style.color = "var(--navy)";
+        btn.textContent = "HX Not Linked";
       }
     }
 
