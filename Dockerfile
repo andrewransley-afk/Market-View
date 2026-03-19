@@ -7,16 +7,23 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copy package files and install
+# Copy package files and install ALL deps (need typescript for build)
 COPY package.json package-lock.json* ./
-RUN npm install --omit=dev
+RUN npm install
 
-# Copy source
+# Copy source and compile TypeScript
 COPY . .
+RUN npx tsc
+
+# Copy static assets to dist so Express can serve them
+RUN cp -r src/dashboard/public dist/dashboard/public
+
+# Remove dev dependencies to shrink image
+RUN npm prune --omit=dev
 
 # Create data directory for SQLite
 RUN mkdir -p /app/data
 
 EXPOSE 3000
 
-CMD ["npx", "tsx", "src/index.ts"]
+CMD ["node", "dist/index.js"]
